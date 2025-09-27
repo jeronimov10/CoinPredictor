@@ -250,7 +250,7 @@ def fases_ciclo(c1, post_w: int = 52, pre_w: int = 36):
     """
 
 
-    df = c1.sort_index().copy()
+    df = c1.copy()
     df.index.name = "Date"
 
     inicio, final = df.index.min(), df.index.max()
