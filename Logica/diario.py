@@ -66,17 +66,103 @@ def graficas_ciclos(df)->None:
     Genera gráficas de los ciclos identificados en los datos.
     """
 
+
     c1=df.loc["2012-11-28":"2016-07-09"]
     c2=df.loc["2016-07-09":"2020-05-11"]
     c3=df.loc["2020-05-11":"2024-04-19"]
     c4=df.loc["2024-04-19":"2028-04-10"]
 
+    fecha_max_1 = c1['Close'].idxmax()
+    fecha_min_1 = c1['Close'].idxmin()    
+    min_1 = float(c1.loc[fecha_min_1, 'Close'])
+    max_1 = float(c1.loc[fecha_max_1, 'Close']) 
+    prom_1 = float(c1['Close'].mean())
 
-    mpf.plot(c1, type='candle', style='charles',title='Ciclo 2012-2016', ylabel='Precio (USD)', volume=True, mav=(3,6,9))
-    mpf.plot(c2, type='candle', style='charles',title='Ciclo 2016-2020', ylabel='Precio (USD)', volume=True, mav=(3,6,9))
-    mpf.plot(c3, type='candle', style='charles',title='Ciclo 2020-2024', ylabel='Precio (USD)', volume=True, mav=(3,6,9))
-    mpf.plot(c4, type='candle', style='charles',title='Ciclo 2024-2028 (en curso)', ylabel='Precio (USD)', volume=True, mav=(3,6,9))
+    fecha_max_2 = c2['Close'].idxmax()
+    fecha_min_2 = c2['Close'].idxmin() 
+    min_2 = float(c2.loc[fecha_min_2, 'Close'])
+    max_2 = float(c2.loc[fecha_max_2, 'Close']) 
+    prom_2 = float(c2['Close'].mean()) 
     
+    fecha_max_3 = c3['Close'].idxmax()
+    fecha_min_3 = c3['Close'].idxmin()  
+    min_3 = float(c3.loc[fecha_min_3, 'Close'])
+    max_3 = float(c3.loc[fecha_max_3, 'Close'])
+    prom_3 = float(c3['Close'].mean())
+
+    fecha_max_4 = c4['Close'].idxmax()
+    fecha_min_4 = c4['Close'].idxmin() 
+    prom_4 = float(c4['Close'].mean())
+    min_4 = float(c4.loc[fecha_min_4, 'Close'])
+    max_4 = float(c4.loc[fecha_max_4, 'Close'])  
+
+    # --- Ciclo 2012-2016 ---
+    fig, axlist = mpf.plot(
+        c1, type='candle', style='charles',
+        title='Ciclo 2012-2016', ylabel='Precio (USD)',
+        volume=True, mav=(3,6,9), returnfig=True
+    )
+    ax = axlist[0]
+    ax.text(
+        0.02, 0.98,
+        f"• Max Close: {max_1:,.0f} USD ({fecha_max_1:%Y-%m})\n"
+        f"• Min Close: {min_1:,.0f} USD ({fecha_min_1:%Y-%m})\n"
+        f"• Prom Close: {prom_1:,.0f} USD ({fecha_min_1:%Y-%m})",
+        transform=ax.transAxes, va='top', fontsize=10,
+        bbox=dict(boxstyle='round', facecolor='white', alpha=0.75, edgecolor='gray')
+    )
+    mpf.show()
+
+        # --- Ciclo 2016-2020 ---
+    fig, axlist = mpf.plot(
+        c2, type='candle', style='charles',
+        title='Ciclo 2016-2020', ylabel='Precio (USD)',
+        volume=True, mav=(3,6,9), returnfig=True
+    )
+    ax = axlist[0]
+    ax.text(
+        0.02, 0.98,
+        f"• Max Close: {max_2:,.0f} USD ({fecha_max_2:%Y-%m})\n"
+        f"• Min Close: {min_2:,.0f} USD ({fecha_min_2:%Y-%m})\n"
+        f"• Prom Close: {prom_2:,.0f} USD ({fecha_min_2:%Y-%m})",
+        transform=ax.transAxes, va='top', fontsize=10,
+        bbox=dict(boxstyle='round', facecolor='white', alpha=0.75, edgecolor='gray')
+    )
+    mpf.show()
+
+    # --- Ciclo 2020-2024 ---
+    fig, axlist = mpf.plot(
+        c3, type='candle', style='charles',
+        title='Ciclo 2020-2024', ylabel='Precio (USD)',
+        volume=True, mav=(3,6,9), returnfig=True
+    )
+    ax = axlist[0]
+    ax.text(
+        0.02, 0.98,
+        f"• Max Close: {max_3:,.0f} USD ({fecha_max_3:%Y-%m})\n"
+        f"• Min Close: {min_3:,.0f} USD ({fecha_min_3:%Y-%m})\n"
+        f"• Prom Close: {prom_3:,.0f} USD ({fecha_min_3:%Y-%m})",
+        transform=ax.transAxes, va='top', fontsize=10,
+        bbox=dict(boxstyle='round', facecolor='white', alpha=0.75, edgecolor='gray')
+    )
+    mpf.show()
+
+    # --- Ciclo 2024-2028 (en curso) ---
+    fig, axlist = mpf.plot(
+        c4, type='candle', style='charles',
+        title='Ciclo 2024-2028 (en curso)', ylabel='Precio (USD)',
+        volume=True, mav=(3,6,9), returnfig=True
+    )
+    ax = axlist[0]
+    ax.text(
+        0.02, 0.98,
+        f"• Max Close: {max_4:,.0f} USD ({fecha_max_4:%Y-%m})\n"
+        f"• Min Close: {min_4:,.0f} USD ({fecha_min_4:%Y-%m})\n"
+        f"• Prom Close: {prom_4:,.0f} USD ({fecha_min_4:%Y-%m})",
+        transform=ax.transAxes, va='top', fontsize=10,
+        bbox=dict(boxstyle='round', facecolor='white', alpha=0.75, edgecolor='gray')
+    )
+    mpf.show()
 
 
 
