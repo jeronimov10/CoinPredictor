@@ -262,6 +262,7 @@ def fases_ciclo(c1, post_w: int = 52, pre_w: int = 36):
     else:
         fecha_min = df["Close"].idxmin()
 
+    #definir post y pre halving
     post_end = inicio + pd.to_timedelta(post_w, unit="W")
     if post_end > final:
         post_end = final
@@ -270,19 +271,22 @@ def fases_ciclo(c1, post_w: int = 52, pre_w: int = 36):
     if pre_start < inicio:
         pre_start = inicio
 
+
+
     fase = pd.Series(index=df.index, dtype=object)
     fase[:] = ""
 
 
     # Bull point: inicio -> top
-    left = min(inicio, fecha_max_close); right = max(inicio, fecha_max_close)
+    left = min(inicio, fecha_max_close)
+    right = max(inicio, fecha_max_close)
     fase.loc[left:right] = "Bull point"
 
-    # Bear point: top -> bottom (si bottom <= top)
+    # Bear point: top -> bottom
     if fecha_min >= fecha_max_close:
         fase.loc[fecha_max_close:fecha_min] = "Bear point"
 
-    # Recuperación: bottom -> pre_start (si hay tramo)
+    # Recuperación: bottom -> pre_halving
     if fecha_min < pre_start:
         fase.loc[fecha_min:pre_start] = "Recuperación"
 
@@ -293,9 +297,6 @@ def fases_ciclo(c1, post_w: int = 52, pre_w: int = 36):
     fase.loc[pre_start:final] = "Pre-halving"
 
     pct = df["Close"].pct_change()
-
-
-
 
 
     out = pd.DataFrame({
