@@ -59,18 +59,21 @@ def cargar_depurar_datos(archivo):
     return df, estructura
 
 
+#Dataframe depurado y una etsructura de datos tipo lista de diccionarios de diccionarios
 df, estrcutura = cargar_depurar_datos(archivo)
 
-def graficas_ciclos(df)->None:
+#Subsets de los ciclos del mercado teniendo en cuenta los halvings
+c1=df.loc["2012-11-28":"2016-07-09"]
+c2=df.loc["2016-07-09":"2020-05-11"]
+c3=df.loc["2020-05-11":"2024-04-19"]
+c4=df.loc["2024-04-19":"2028-04-10"]
+
+
+def graficas_ciclos(c1,c2,c3,c4)->None:
     """
     Genera gráficas de los ciclos identificados en los datos.
     """
 
-
-    c1=df.loc["2012-11-28":"2016-07-09"]
-    c2=df.loc["2016-07-09":"2020-05-11"]
-    c3=df.loc["2020-05-11":"2024-04-19"]
-    c4=df.loc["2024-04-19":"2028-04-10"]
 
     fecha_max_1 = c1['Close'].idxmax()
     fecha_min_1 = c1['Close'].idxmin()    
