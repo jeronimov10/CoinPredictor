@@ -242,7 +242,7 @@ def grafica_historica(df, c1, c2, c3, c4)->None:
 
     mpf.show()
 
-def fase_ciclo(df, c1):
+def fases_ciclo(c1, post_w: int = 52, pre_w: int = 36):
     """
     Determina las fases del ciclo dividiendola en 
     Bull point, Bear point, recuperacion, post Halving, pre Halving y
@@ -250,11 +250,69 @@ def fase_ciclo(df, c1):
     """
 
 
+    df = c1.sort_index().copy()
+    df.index.name = "Date"
 
-    return 
+    inicio, final = df.index.min(), df.index.max()
+    fecha_max_close = df["Close"].idxmax()
+    post_max = df.loc[fecha_max_close:final]
+
+    if not post_max.empty:
+        fecha_min = post_max["Close"].idxmin()
+    else:
+        fecha_min = df["Close"].idxmin()
+
+    post_end = inicio + pd.to_timedelta(post_w, unit="W")
+    if post_end > final:
+        post_end = final
+
+    pre_start = final - pd.to_timedelta(pre_w, unit="W")
+    if pre_start < inicio:
+        pre_start = inicio
+
+    fase = pd.Series(index=df.index, dtype=object)
+    fase[:] = ""
+
+
+    # Bull point: inicio -> top
+    left = min(inicio, fecha_max_close); right = max(inicio, fecha_max_close)
+    fase.loc[left:right] = "Bull point"
+
+    # Bear point: top -> bottom (si bottom <= top)
+    if fecha_min >= fecha_max_close:
+        fase.loc[fecha_max_close:fecha_min] = "Bear point"
+
+    # Recuperación: bottom -> pre_start (si hay tramo)
+    if fecha_min < pre_start:
+        fase.loc[fecha_min:pre_start] = "Recuperación"
+
+    # Post-halving:
+    fase.loc[inicio:post_end] = "Post-halving"
+
+    # Pre-halving:
+    fase.loc[pre_start:final] = "Pre-halving"
+
+    pct = df["Close"].pct_change()
+
+
+
+
+
+    out = pd.DataFrame({
+        "Close": df["Close"],
+        "Volume": df["Volume"],
+        "Fase": fase,
+        "Pct_Change": pct
+    })
+    out.index.name = "Date"
+    
+
+
+
+    return out
     
 
 
 
 
-grafica_historica(df, c1, c2, c3, c4)
+print(fases_ciclo(c1))
