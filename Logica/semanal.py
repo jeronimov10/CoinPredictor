@@ -1,6 +1,14 @@
 import pandas as pd
 
-import matplotlib as plt
+from pandas_datareader import data as wb
+
+import matplotlib.pyplot as plt
+
+from matplotlib import style
+
+import seaborn as sns
+
+from math import ceil
 
 import mplfinance as mpf
 
@@ -242,7 +250,7 @@ def grafica_historica(df, c1, c2, c3, c4)->None:
 
     mpf.show()
 
-def fases_ciclo(c1, post_w: int = 52, pre_w: int = 36):
+def fases_ciclo(c, post_w: int = 52, pre_w: int = 36):
     """
     Determina las fases del ciclo dividiendola en 
     Bull point, Bear point, recuperacion, post Halving, pre Halving y
@@ -250,7 +258,7 @@ def fases_ciclo(c1, post_w: int = 52, pre_w: int = 36):
     """
 
 
-    df = c1.copy()
+    df = c.copy()
     df.index.name = "Date"
 
     inicio, final = df.index.min(), df.index.max()
@@ -300,10 +308,13 @@ def fases_ciclo(c1, post_w: int = 52, pre_w: int = 36):
 
 
     out = pd.DataFrame({
-        "Close": df["Close"],
-        "Volume": df["Volume"],
-        "Fase": fase,
-        "Pct_Change": pct
+        "Open"       : df["Open"],
+        "High"       : df["High"],
+        "Low"        : df["Low"],
+        "Close"      : df["Close"],
+        "Volume"     : df["Volume"],
+        "Fase"       : fase,
+        "Pct_Change" : pct
     })
     out.index.name = "Date"
     
@@ -314,6 +325,11 @@ def fases_ciclo(c1, post_w: int = 52, pre_w: int = 36):
     
 
 
+#Simulacion ciclo actual
 
+c1_f = fases_ciclo(c1)
+c2_f = fases_ciclo(c2)
+c3_f = fases_ciclo(c3)
+c4_f = fases_ciclo(c4)  
 
-print(fases_ciclo(c1))
+ 
