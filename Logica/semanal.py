@@ -308,12 +308,12 @@ def fases_ciclo(c, post_w: int = 52, pre_w: int = 36):
 
 
     out = pd.DataFrame({
-        "Open"       : df["Open"],
-        "High"       : df["High"],
-        "Low"        : df["Low"],
-        "Close"      : df["Close"],
-        "Volume"     : df["Volume"],
-        "Fase"       : fase,
+        "Open": df["Open"],
+        "High": df["High"],
+        "Low": df["Low"],
+        "Close": df["Close"],
+        "Volume": df["Volume"],
+        "Fase" : fase,
         "Pct_Change" : pct
     })
     out.index.name = "Date"
@@ -323,6 +323,7 @@ def fases_ciclo(c, post_w: int = 52, pre_w: int = 36):
 
     return out
     
+
 
 
 #Simulacion Montecarlo ciclo actual
@@ -398,4 +399,37 @@ def simulacion_montecarlo_simple(c4, semanas, sims,  alpha_rango, seed):
     )
     return pd.concat([c4, c4_sim])
 
+
+def grafica_simulacion_simple(c)->None:
+    """
+    Genera una gráfica de la simulación de Montecarlo.
+    """
+
+    fecha_max = c['Close'].idxmax()
+    fecha_min = c['Close'].idxmin()    
+    min = float(c.loc[fecha_min, 'Close'])
+    max = float(c.loc[fecha_max, 'Close']) 
+    prom = float(c['Close'].mean())
+
+
+    fig, axlist = mpf.plot(
+        c, type='candle', style='charles',
+        title='Ciclo 2024-2028 (en curso)', ylabel='Precio (USD)',
+        volume=True, mav=(3,6,9), returnfig=True
+    )
+    ax = axlist[0]
+    ax.text(
+        0.02, 0.98,
+        f"• Max Close: {max:,.0f} USD ({fecha_max:%Y-%m})\n"
+        f"• Min Close: {min:,.0f} USD ({fecha_min:%Y-%m})\n"
+        f"• Prom Close: {prom:,.0f} USD ({fecha_min:%Y-%m})",
+        transform=ax.transAxes, va='top', fontsize=10,
+        bbox=dict(boxstyle='round', facecolor='white', alpha=0.75, edgecolor='gray')
+    )
+    mpf.show()
+
+
+
 c4_simulado = simulacion_montecarlo_simple(c4, 132, 1000, 1.0, None)
+# grafica_simulacion_simple(c4_simulado)
+c4_simulado_ciclos = fases_ciclo(c4_simulado)
