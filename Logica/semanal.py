@@ -439,3 +439,4 @@ def grafica_simulacion_simple(c)->None:
 # print(d)
 
 
+
