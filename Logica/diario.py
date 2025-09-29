@@ -1,13 +1,22 @@
-from statistics import LinearRegression
 import pandas as pd
 
-import matplotlib as plt
+from pandas_datareader import data as wb
+
+import matplotlib.pyplot as plt
+
+from matplotlib import style
+
+import seaborn as sns
+
+from math import ceil
 
 import mplfinance as mpf
 
 import yfinance as yf
 
 import numpy as np
+
+from sklearn.linear_model import LinearRegression
 
 archivo = "C:/Users/jeron/OneDrive/Escritorio/CoinPredictor/Datos/bitcoin_diario.csv"
 
@@ -171,20 +180,20 @@ def graficas_ciclos(c1,c2,c3,c4)->None:
 
 def fases_ciclo(c):
 
-    
     """
     Determina las fases del ciclo dividiendola en 
     Fase alcista, Fase bajista, Recuperación (usando la pendiente y regersion lineal).
     Devuelve un DataFrame con las fases y el cambio porcentual semanal.
     """
     
-
     df = c.copy()
     df.index.name = "Date"
 
-    ventana = 120
-    tol_slope_pct = 0.005
-    rango_rec_pct = 0.08
+    ventana = 20
+    tol_slope_pct = 0.001
+    tol_ret = 0.05
+    rango_rec_pct = 0.05
+    min_run = 12
 
     precios_cierre = df["Close"].astype(float).values
     logc = np.log(precios_cierre)
@@ -211,11 +220,13 @@ def fases_ciclo(c):
         w = precios_cierre[i-ventana:i]
         rango_rel = (w.max() - w.min()) / w.mean()
 
+        ret_net = float(logc[i-1] - logc[i-ventana])
+
         if rango_rel <= rango_rec_pct and abs(slope_pct) <= tol_slope_pct:
             fase = 'Recuperación'
-        elif slope_pct > tol_slope_pct:
+        elif (slope_pct >  tol_slope_pct) and (ret_net >  tol_ret):
             fase = 'Alcista'
-        elif slope_pct < -tol_slope_pct:
+        elif (slope_pct < -tol_slope_pct) and (ret_net < -tol_ret):
             fase = 'Bajista'
         else:
             fase = 'Recuperación'
@@ -223,6 +234,18 @@ def fases_ciclo(c):
         fases.append(fase)
         slopes.append(slope_pct)
         ranges.append(rango_rel)
+
+    fases_arr = np.array(fases, dtype=object)
+    start = 0
+    for i in range(1, len(fases_arr)+1):
+        if i == len(fases_arr) or fases_arr[i] != fases_arr[i-1]:
+            run_len = i - start
+            if fases_arr[start] != 'Indefinido' and run_len < min_run:
+                if start > 0:
+                    fases_arr[start:i] = fases_arr[start-1]
+                elif i < len(fases_arr):
+                    fases_arr[start:i] = fases_arr[i]
+            start = i
 
     pct = df["Close"].pct_change()
 
@@ -232,14 +255,41 @@ def fases_ciclo(c):
         "Low": df["Low"],
         "Close": df["Close"],
         "Volume": df["Volume"],
-        "Fase": fases,
+        "Fase": fases_arr,
         "Pct_Change": pct
     })
     out.index.name = "Date"
     return out
-    
+
+
+def grafica_fases(c):
+
+    """
+    Genera una gráfica de las fases del ciclo actual con colores.
+    1. Fase alcista: verde
+    2. Fase bajista: rojo  
+    3. Recuperación: azul
+    4. Indefinido: gris
+    """
+    d = fases_ciclo(c).sort_index()
+    colores = {'Alcista': 'green', 'Bajista': 'red', 'Recuperación': 'blue', 'Indefinido': 'gray'}
+    idx = d.index
+    close = d['Close'].values
+    fases = d['Fase'].values
+    fig, ax = plt.subplots(figsize=(12,6))
+    ax.set_title('Ciclo 2024-2028 (en curso)')
+    ax.set_ylabel('Precio (USD)')
+    i0 = 0
+    for i in range(1, len(d)):
+        if fases[i] != fases[i-1]:
+            ax.plot(idx[i0:i], close[i0:i], color=colores.get(fases[i-1], 'gray'), linewidth=2)
+            i0 = i
+    ax.plot(idx[i0:], close[i0:], color=colores.get(fases[-1], 'gray'), linewidth=2)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
 
 
 
-
+grafica_fases(c3)
 
