@@ -16,6 +16,8 @@ import yfinance as yf
 
 import numpy as np
 
+from sklearn.linear_model import LinearRegression
+
 archivo = "C:/Users/jeron/OneDrive/Escritorio/CoinPredictor/Datos/bitcoin_semanal.csv"
 
 
@@ -250,62 +252,61 @@ def grafica_historica(df, c1, c2, c3, c4)->None:
 
     mpf.show()
 
-def fases_ciclo(c, post_w: int = 52, pre_w: int = 36):
+def fases_ciclo(c):
     """
     Determina las fases del ciclo dividiendola en 
-    Bull point, Bear point, recuperacion, post Halving, pre Halving y
-    Determina si el mercado esta en una fase alcista o esta en una fase bajista.
+    Fase alcista, Fase bajista, Recuperación (usando la pendiente y regersion lineal).
+    Devuelve un DataFrame con las fases y el cambio porcentual semanal.
     """
 
 
     df = c.copy()
     df.index.name = "Date"
+    
 
-    inicio, final = df.index.min(), df.index.max()
-    fecha_max_close = df["Close"].idxmax()
-    post_max = df.loc[fecha_max_close:final]
+    ventana = 20
+    tol_slope_pct = 0.005
+    rango_rec_pct = 0.08
 
-    if not post_max.empty:
-        fecha_min = post_max["Close"].idxmin()
-    else:
-        fecha_min = df["Close"].idxmin()
+    precios_cierre = df["Close"].astype(float).values
+    logc = np.log(precios_cierre)
 
-    #definir post y pre halving
-    post_end = inicio + pd.to_timedelta(post_w, unit="W")
-    if post_end > final:
-        post_end = final
+    fases = []
+    slopes = []
+    ranges = []
 
-    pre_start = final - pd.to_timedelta(pre_w, unit="W")
-    if pre_start < inicio:
-        pre_start = inicio
+    X = np.arange(ventana).reshape(-1, 1)
+    lr = LinearRegression()
 
+    for i in range(len(precios_cierre)):
+        if i < ventana:
+            fases.append('Indefinido')
+            slopes.append(np.nan)
+            ranges.append(np.nan)
+            continue
 
+        y = logc[i-ventana:i]
+        lr.fit(X, y)
+        slope_log = lr.coef_[0]
+        slope_pct = float(slope_log)
 
-    fase = pd.Series(index=df.index, dtype=object)
-    fase[:] = ""
+        w = precios_cierre[i-ventana:i]
+        rango_rel = (w.max() - w.min()) / w.mean()
 
+        if rango_rel <= rango_rec_pct and abs(slope_pct) <= tol_slope_pct:
+            fase = 'Recuperación'
+        elif slope_pct > tol_slope_pct:
+            fase = 'Alcista'
+        elif slope_pct < -tol_slope_pct:
+            fase = 'Bajista'
+        else:
+            fase = 'Recuperación'
 
-    # Bull point: inicio -> top
-    left = min(inicio, fecha_max_close)
-    right = max(inicio, fecha_max_close)
-    fase.loc[left:right] = "Bull point"
-
-    # Bear point: top -> bottom
-    if fecha_min >= fecha_max_close:
-        fase.loc[fecha_max_close:fecha_min] = "Bear point"
-
-    # Recuperación: bottom -> pre_halving
-    if fecha_min < pre_start:
-        fase.loc[fecha_min:pre_start] = "Recuperación"
-
-    # Post-halving:
-    fase.loc[inicio:post_end] = "Post-halving"
-
-    # Pre-halving:
-    fase.loc[pre_start:final] = "Pre-halving"
+        fases.append(fase)
+        slopes.append(slope_pct)
+        ranges.append(rango_rel)
 
     pct = df["Close"].pct_change()
-
 
     out = pd.DataFrame({
         "Open": df["Open"],
@@ -313,14 +314,10 @@ def fases_ciclo(c, post_w: int = 52, pre_w: int = 36):
         "Low": df["Low"],
         "Close": df["Close"],
         "Volume": df["Volume"],
-        "Fase" : fase,
-        "Pct_Change" : pct
+        "Fase": fases,
+        "Pct_Change": pct
     })
     out.index.name = "Date"
-    
-
-
-
     return out
     
 
@@ -430,6 +427,15 @@ def grafica_simulacion_simple(c)->None:
 
 
 
-c4_simulado = simulacion_montecarlo_simple(c4, 132, 1000, 1.0, None)
-# grafica_simulacion_simple(c4_simulado)
-c4_simulado_ciclos = fases_ciclo(c4_simulado)
+# c4_simulado = simulacion_montecarlo_simple(c4, 132, 1000, 1.0, None)
+# # grafica_simulacion_simple(c4_simulado)
+# c4_simulado_ciclos = fases_ciclo(c4_simulado)
+
+
+
+# d = fases_ciclo(c3)
+
+
+# print(d)
+
+

@@ -1,3 +1,4 @@
+from statistics import LinearRegression
 import pandas as pd
 
 import matplotlib as plt
@@ -169,6 +170,7 @@ def graficas_ciclos(c1,c2,c3,c4)->None:
 
 
 def fases_ciclo(c, post_w: int = 52, pre_w: int = 36):
+
     """
     Determina las fases del ciclo dividiendola en 
     Bull point, Bear point, recuperacion, post Halving, pre Halving y
@@ -241,6 +243,75 @@ def fases_ciclo(c, post_w: int = 52, pre_w: int = 36):
 
     return out
 
+
+def fases_ciclo(c):
+
+    
+    """
+    Determina las fases del ciclo dividiendola en 
+    Fase alcista, Fase bajista, Recuperación (usando la pendiente y regersion lineal).
+    Devuelve un DataFrame con las fases y el cambio porcentual semanal.
+    """
+    
+
+    df = c.copy()
+    df.index.name = "Date"
+
+    ventana = 120
+    tol_slope_pct = 0.005
+    rango_rec_pct = 0.08
+
+    precios_cierre = df["Close"].astype(float).values
+    logc = np.log(precios_cierre)
+
+    fases = []
+    slopes = []
+    ranges = []
+
+    X = np.arange(ventana).reshape(-1, 1)
+    lr = LinearRegression()
+
+    for i in range(len(precios_cierre)):
+        if i < ventana:
+            fases.append('Indefinido')
+            slopes.append(np.nan)
+            ranges.append(np.nan)
+            continue
+
+        y = logc[i-ventana:i]
+        lr.fit(X, y)
+        slope_log = lr.coef_[0]
+        slope_pct = float(slope_log)
+
+        w = precios_cierre[i-ventana:i]
+        rango_rel = (w.max() - w.min()) / w.mean()
+
+        if rango_rel <= rango_rec_pct and abs(slope_pct) <= tol_slope_pct:
+            fase = 'Recuperación'
+        elif slope_pct > tol_slope_pct:
+            fase = 'Alcista'
+        elif slope_pct < -tol_slope_pct:
+            fase = 'Bajista'
+        else:
+            fase = 'Recuperación'
+
+        fases.append(fase)
+        slopes.append(slope_pct)
+        ranges.append(rango_rel)
+
+    pct = df["Close"].pct_change()
+
+    out = pd.DataFrame({
+        "Open": df["Open"],
+        "High": df["High"],
+        "Low": df["Low"],
+        "Close": df["Close"],
+        "Volume": df["Volume"],
+        "Fase": fases,
+        "Pct_Change": pct
+    })
+    out.index.name = "Date"
+    return out
     
 
 
