@@ -175,6 +175,33 @@ def graficas_ciclos(c1, c2, c3, c4)->None:
     )
     mpf.show()
 
+
+def grafica_un_ciclo(c)->None:
+    """
+    Genera una gráfica de un ciclo específico.
+    """
+    fecha_max = c['Close'].idxmax()
+    fecha_min = c['Close'].idxmin()    
+    min = float(c.loc[fecha_min, 'Close'])
+    max = float(c.loc[fecha_max, 'Close']) 
+    prom = float(c['Close'].mean())
+
+
+    fig, axlist = mpf.plot(
+        c, type='candle', style='charles',
+        title='Ciclo 2024-2028 (en curso)', ylabel='Precio (USD)',
+        volume=True, mav=(3,6,9), returnfig=True
+    )
+    ax = axlist[0]
+    ax.text(
+        0.02, 0.98,
+        f"• Max Close: {max:,.0f} USD ({fecha_max:%Y-%m})\n"
+        f"• Min Close: {min:,.0f} USD ({fecha_min:%Y-%m})\n"
+        f"• Prom Close: {prom:,.0f} USD ({fecha_min:%Y-%m})",
+        transform=ax.transAxes, va='top', fontsize=10,
+        bbox=dict(boxstyle='round', facecolor='white', alpha=0.75, edgecolor='gray')
+    )
+    mpf.show()
 def grafica_historica(df, c1, c2, c3, c4)->None:
     """
     Genera una gráfica histórica completa de los datos.
@@ -441,7 +468,7 @@ def simulacion_montecarlo_simple(c4, semanas, sims,  alpha_rango, seed):
         {"Open": opens, "High": highs, "Low": lows, "Close": close_rep, "Volume": vol_rep},
         index=idx_fut
     )
-    return pd.concat([c4, c4_sim])
+    return pd.concat([c4, c4_sim]), c4_sim
 
 
 def grafica_simulacion_simple(c)->None:
@@ -474,11 +501,12 @@ def grafica_simulacion_simple(c)->None:
 
 
 
-# c4_simulado = simulacion_montecarlo_simple(c4, 132, 1000, 1.0, None)
+c4_simulado, c4_s = simulacion_montecarlo_simple(c4, 10, 1000, 1.0, None)
 
-
+grafica_un_ciclo(c4_s)
 # c4_simulado_ciclos = fases_ciclo(c4_simulado)
-# grafica_simulacion_simple(c4_simulado_ciclos)
+grafica_simulacion_simple(c4_simulado)
+
 
 
 
