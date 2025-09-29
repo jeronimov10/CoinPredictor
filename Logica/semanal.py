@@ -348,7 +348,7 @@ def grafica_fases(c):
     3. Recuperación: azul
     4. Indefinido: gris
     """
-    d = fases_ciclo(c).sort_index()
+    d = c.copy().sort_index()
     colores = {'Alcista': 'green', 'Bajista': 'red', 'Recuperación': 'blue', 'Indefinido': 'gray'}
     idx = d.index
     close = d['Close'].values
@@ -370,7 +370,7 @@ def grafica_fases(c):
 
 
 
-#Simulacion Montecarlo ciclo actual
+#Simulacion Montecarlo ciclo actual esta simulacion de montecarlo es simple y no tiene en cuenta las fases del ciclo y solo se parctica como aporximado a posibles maixmos que vamos a encontarr sin embargo, no es bueno interpertarla por ciclos pues no tiene ciclos reales
 
 def simulacion_montecarlo_simple(c4, semanas, sims,  alpha_rango, seed):
 
@@ -475,16 +475,13 @@ def grafica_simulacion_simple(c)->None:
 
 
 # c4_simulado = simulacion_montecarlo_simple(c4, 132, 1000, 1.0, None)
-# # grafica_simulacion_simple(c4_simulado)
+
+
 # c4_simulado_ciclos = fases_ciclo(c4_simulado)
+# grafica_simulacion_simple(c4_simulado_ciclos)
 
 
 
-
-
-grafica_fases(c3)
-
-# print(d)
 
 
 

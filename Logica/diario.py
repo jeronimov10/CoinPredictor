@@ -271,7 +271,7 @@ def grafica_fases(c):
     3. Recuperación: azul
     4. Indefinido: gris
     """
-    d = fases_ciclo(c).sort_index()
+    d = c.copy().sort_index()
     colores = {'Alcista': 'green', 'Bajista': 'red', 'Recuperación': 'blue', 'Indefinido': 'gray'}
     idx = d.index
     close = d['Close'].values
@@ -291,5 +291,5 @@ def grafica_fases(c):
 
 
 
-grafica_fases(c3)
+
 
