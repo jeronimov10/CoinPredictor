@@ -334,16 +334,20 @@ def simulacion_montecarlo_simple(c4, semanas, sims,  alpha_rango, seed):
     basada en el ciclo actual de Bitcoin.
     """
     rng = np.random.default_rng(seed)
-    c4 = c4.sort_index().copy()
+    c4 = c4.copy()
 
    
+    
+
+    #Mu y sigma close
     ret = np.log(c4["Close"]).diff().dropna()
     mu = float(ret.mean())
     sigma = float(ret.std(ddof=1))
+
     if not np.isfinite(sigma) or sigma <= 0:
         raise ValueError("No se pudo estimar una volatilidad semanal válida a partir de c4.")
 
-    
+    #Mu y sigma volumen
     dlogV = np.log(c4["Volume"].clip(lower=1)).diff().dropna()
     mu_v  = float(dlogV.mean()) if len(dlogV) else 0.0
     sig_v = float(dlogV.std(ddof=1)) if len(dlogV) and dlogV.std(ddof=1) > 0 else 0.25
@@ -353,7 +357,7 @@ def simulacion_montecarlo_simple(c4, semanas, sims,  alpha_rango, seed):
     start = c4.index[-1] + pd.Timedelta(weeks=1)
     idx_fut = pd.date_range(start=start, periods=semanas, freq=freq)
 
-    
+    #Simulacion montecarlo precio close
     S0 = float(c4["Close"].iloc[-1])
     Z  = rng.normal(size=(sims, semanas))        
     R  = mu + sigma * Z                          
@@ -364,13 +368,14 @@ def simulacion_montecarlo_simple(c4, semanas, sims,  alpha_rango, seed):
     close_rep = np.median(paths_close, axis=0)   
 
     
-    
+    #Asignacion opens
     opens = np.empty(semanas, dtype=float)
     opens[0] = S0
     if semanas > 1:
         opens[1:] = close_rep[:-1]
 
     
+    #Asignacion highs y lows
     rango = np.maximum(0.0, alpha_rango * sigma)
     max_oc = np.maximum(opens, close_rep)
     min_oc = np.minimum(opens, close_rep)
@@ -378,6 +383,7 @@ def simulacion_montecarlo_simple(c4, semanas, sims,  alpha_rango, seed):
     lows   = np.clip(min_oc * (1.0 - rango), 1e-8, None)
 
     
+    #Simulacion montecarlo volumen
     V0 = float(c4["Volume"].iloc[-1])
     Zv = rng.normal(mu_v, sig_v, size=(sims, semanas))
     logV_paths = np.cumsum(Zv, axis=1)
