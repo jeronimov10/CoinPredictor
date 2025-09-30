@@ -400,6 +400,7 @@ def estadisticas_dataframe(c):
 
     periodos_anuales = 52
     df = c.copy()
+
     info_basica = {
         'fecha_inicio': df.index[0],
         'fecha_fin': df.index[-1],
@@ -435,9 +436,6 @@ def estadisticas_dataframe(c):
     }
     
     return resumen
-
-
-
 
 
 #Simulacion Montecarlo ciclo actual esta simulacion de montecarlo es simple y no tiene en cuenta las fases del ciclo y solo se parctica como aporximado a posibles maixmos que vamos a encontarr sin embargo, no es bueno interpertarla por ciclos pues no tiene ciclos reales
@@ -567,30 +565,30 @@ def simulacion_montecarlo_2(c):
             new_close = current_close * (1 + random_return)
             closes[semana] = new_close
             
-            # Simular Open (con gap respecto al Close anterior)
+            # Simular Open 
             gap_factor = np.random.normal(gap_mean, gap_std)
-            gap_factor = max(0.8, min(1.2, gap_factor))  # Limitar gaps extremos
+            gap_factor = max(0.8, min(1.2, gap_factor)) 
             opens[semana] = current_close * gap_factor
             
-            # Simular High (siempre mayor que Open y Close)
+            # Simular High 
             high_factor = abs(np.random.normal(high_mean, high_std))
-            high_factor = max(1.0, high_factor)  # Asegurar que High >= Close
+            high_factor = max(1.0, high_factor) 
             highs[semana] = new_close * high_factor
             highs[semana] = max(highs[semana], opens[semana], new_close)
             
-            # Simular Low (siempre menor que Open y Close)
+            # Simular Low 
             low_factor = abs(np.random.normal(low_mean, low_std))
-            low_factor = min(1.0, low_factor)  # Asegurar que Low <= Close
+            low_factor = min(1.0, low_factor) 
             lows[semana] = new_close * low_factor
             lows[semana] = min(lows[semana], opens[semana], new_close)
             
             # Simular Volume
             volume_return = np.random.normal(volumen_mu, volumen_sigma)
             new_volume = current_volume * (1 + volume_return)
-            new_volume = max(0, new_volume)  # Asegurar volumen positivo
+            new_volume = max(0, new_volume) 
             volumes[semana] = new_volume
             
-            # Actualizar para siguiente iteración
+            
             current_close = new_close
             current_volume = new_volume
 
@@ -610,11 +608,13 @@ def simulacion_montecarlo_2(c):
 # c4_simulado_ciclos = fases_ciclo(c4_simulado)
 # grafica_simulacion_simple(c4_simulado)
 
-c4_s, c4_s_s = simulacion_montecarlo_2(c4)
+# c4_s, c4_s_s = simulacion_montecarlo_2(c4)
 
-grafica_un_ciclo(c4_s)
+# grafica_un_ciclo(c4_s)
 
-print(estadisticas_dataframe(c4_s))
+# print(estadisticas_dataframe(c4_s))
+
+
 
 
 
