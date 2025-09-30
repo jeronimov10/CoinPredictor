@@ -623,43 +623,79 @@ def simulacion_series_de_tiempo(c):
     d = c.copy().dropna()
 
 
-    columnas = ['Open', 'High', 'Low', 'Close', 'Volume']
-    predicciones_dict = {}
+    serie_close = d['Close'].copy()
+    
 
     ultima_fecha = df.index[-1]
     fechas_futuras = pd.date_range(start = ultima_fecha + pd.Timedelta(weeks=1), periods=periodos_futuros, freq='W')
 
-    for columna in columnas:
-        serie = d[columna].copy()
+    #Implementacion modelando todas las columnas super lenta (no la he podido correr)
 
-        modelo = pm.auto_arima(
-            serie,
-            seasonal=True,
-            m=seasonal_period,
-            start_p=0, start_q=0,
-            max_p=5, max_q=5,
-            start_P=0, start_Q=0,
-            max_P=2, max_Q=2,
-            d=None,
-            D=None,
-            trace=False,
-            error_action='ignore',
-            suppress_warnings=True,
-            stepwise=True,
-            information_criterion='aic',
-            n_jobs=-1
-        )
+    # for columna in columnas:
+    #     serie = d[columna].copy()
 
-        predicciones, _ = modelo.predict(n_periods=periodos_futuros, return_conf_int=True, alpha=0.05)
+    #     modelo = pm.auto_arima(
+    #         serie,
+    #         seasonal=True,
+    #         m=seasonal_period,
+    #         start_p=0, start_q=0,
+    #         max_p=3, max_q=3,
+    #         start_P=0, start_Q=0,
+    #         max_P=1, max_Q=1,
+    #         d=None,
+    #         D=1,
+    #         trace=False,
+    #         error_action='ignore',
+    #         suppress_warnings=True,
+    #         stepwise=True,
+    #         information_criterion='aic',
+    #         n_jobs=1, 
+    #         maxiter=50
+    #     )
 
-        predicciones_dict[columna] = predicciones
+    #     predicciones, _ = modelo.predict(n_periods=periodos_futuros, return_conf_int=True, alpha=0.05)
 
-    df_predicciones = pd.DataFrame(predicciones_dict, index=fechas_futuras)
+    #     predicciones_dict[columna] = predicciones
+
+    # df_predicciones = pd.DataFrame(predicciones_dict, index=fechas_futuras)
+
+
+    #Implementacion modelando solo el close y luego usando ratios para las demas columnas
+
+    modelo = pm.auto_arima(
+        serie_close.values,
+        seasonal=False,  
+        start_p=1, start_q=1,
+        max_p=2, max_q=2,
+        d=1,
+        trace=False,
+        error_action='ignore',
+        suppress_warnings=True,
+        stepwise=True,
+        information_criterion='aic',
+        maxiter=50
+    )
 
 
 
+    pred_close = modelo.predict(n_periods=periodos_futuros)
 
-    return df_predicciones, pd.concat([d, df_predicciones])
+    ratio_open = (d['Open'] / d['Close']).mean()
+    ratio_high = (d['High'] / d['Close']).mean()
+    ratio_low = (d['Low'] / d['Close']).mean()
+    ratio_volume = (d['Volume'] / d['Close']).mean()
+
+    df_predicciones = pd.DataFrame({
+        'Open': pred_close * ratio_open,
+        'High': pred_close * ratio_high,
+        'Low': pred_close * ratio_low,
+        'Close': pred_close,
+        'Volume': pred_close * ratio_volume
+    }, index=fechas_futuras)
+
+    return df_predicciones.dropna(), pd.concat([d, df_predicciones])
+
+
 
 
 #Simulacion robusta cadenas markovianas
@@ -685,13 +721,15 @@ def simulacion_series_de_tiempo(c):
 # grafica_historica(df, c1, c2, c3, c4)
 # grafica_fases(fases_ciclo(df))
 
-l, a = simulacion_series_de_tiempo(df)
+# l, a = simulacion_series_de_tiempo(df)
 
 
-print(l.info())
-print(a.info())
-grafica_simple(l)
-grafica_simple(a)
+# print(l.info())
+# print(a.info())
+
+
+# grafica_simple(l)
+# grafica_simple(a)
 
 
 
