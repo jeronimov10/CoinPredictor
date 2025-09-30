@@ -1,26 +1,23 @@
+from typing import List
 import pandas as pd
-
 from datetime import timedelta
-
 from pandas_datareader import data as wb
-
 import matplotlib.pyplot as plt
-
 from matplotlib import style
-
 import seaborn as sns
-
 from math import ceil
-
 import mplfinance as mpf
-
 import yfinance as yf
-
 import numpy as np
-
 from sklearn.linear_model import LinearRegression
-
 from scipy import stats
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+import pmdarima as pm
+import warnings
+warnings.filterwarnings('ignore')
+
+
 archivo = "C:/Users/jeron/OneDrive/Escritorio/CoinPredictor/Datos/bitcoin_semanal.csv"
 
 
@@ -178,7 +175,7 @@ def graficas_ciclos(c1, c2, c3, c4)->None:
     )
     mpf.show()
 
-def grafica_un_ciclo(c)->None:
+def grafica_simple(c)->None:
     """
     Genera una gráfica de un ciclo específico.
     """
@@ -205,7 +202,7 @@ def grafica_un_ciclo(c)->None:
     )
     mpf.show()
 
-def grafica_historica(df, c1, c2, c3, c4)->None:
+def grafica_historica_con_ciclos(df, c1, c2, c3, c4)->None:
     """
     Genera una gráfica histórica completa de los datos.
     """
@@ -511,6 +508,7 @@ def simulacion_montecarlo_simple(c4, semanas, sims,  alpha_rango, seed):
     )
     return pd.concat([c4, c4_sim]), c4_sim
 
+#Simulacion montecarlo 2
 def simulacion_montecarlo_2(c):
     """
     Simulación de Montecarlo avanzada para predecir precios futuros
@@ -602,6 +600,74 @@ def simulacion_montecarlo_2(c):
 
     return pd.concat([c4, sim_df]), sim_df
 
+
+#Simulacion 3
+
+def simulacion_series_de_tiempo(c):
+    """
+    Simulación de series de tiempo para predecir precios futuros
+    Usa el modelo ARIMA
+    basada en el ciclo historico del Bitcoin. Asumiendo que es una serie de
+    tiempo estacionaria. Toca volverla no esta estacionaria.
+    La tendencia historica del BTC ha sido a seguir patrones ciclicos
+    Alcista, bajista y de recuperacion
+    Sin embargo se ve que el BTC tiene una tendencia alcista a largo plazo
+    y se espera que siga esa tendencia.
+    Los ciclos alcistas se ven seguidos de ciclos bajistas seguido de ya sea un
+    ciclo alcista o un ciclo de recupreacion o estabilizacion
+    
+    """
+    periodos_futuros=12 
+    seasonal_period=52
+
+    d = c.copy().dropna()
+
+
+    columnas = ['Open', 'High', 'Low', 'Close', 'Volume']
+    predicciones_dict = {}
+
+    ultima_fecha = df.index[-1]
+    fechas_futuras = pd.date_range(start = ultima_fecha + pd.Timedelta(weeks=1), periods=periodos_futuros, freq='W')
+
+    for columna in columnas:
+        serie = d[columna].copy()
+
+        modelo = pm.auto_arima(
+            serie,
+            seasonal=True,
+            m=seasonal_period,
+            start_p=0, start_q=0,
+            max_p=5, max_q=5,
+            start_P=0, start_Q=0,
+            max_P=2, max_Q=2,
+            d=None,
+            D=None,
+            trace=False,
+            error_action='ignore',
+            suppress_warnings=True,
+            stepwise=True,
+            information_criterion='aic',
+            n_jobs=-1
+        )
+
+        predicciones, _ = modelo.predict(n_periods=periodos_futuros, return_conf_int=True, alpha=0.05)
+
+        predicciones_dict[columna] = predicciones
+
+    df_predicciones = pd.DataFrame(predicciones_dict, index=fechas_futuras)
+
+
+
+
+    return df_predicciones, pd.concat([d, df_predicciones])
+
+
+#Simulacion robusta cadenas markovianas
+
+
+#Pruebas de las funciones
+
+
 # c4_simulado, c4_s = simulacion_montecarlo_simple(c4, 10, 1000, 1.0, None)
 
 # grafica_un_ciclo(c4_s)
@@ -613,6 +679,22 @@ def simulacion_montecarlo_2(c):
 # grafica_un_ciclo(c4_s)
 
 # print(estadisticas_dataframe(c4_s))
+
+# fases_ciclo(df)
+# grafica_un_ciclo(df)
+# grafica_historica(df, c1, c2, c3, c4)
+# grafica_fases(fases_ciclo(df))
+
+l, a = simulacion_series_de_tiempo(df)
+
+
+print(l.info())
+print(a.info())
+grafica_simple(l)
+grafica_simple(a)
+
+
+
 
 
 
