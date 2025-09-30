@@ -1,5 +1,7 @@
 import pandas as pd
 
+from datetime import timedelta
+
 from pandas_datareader import data as wb
 
 import matplotlib.pyplot as plt
@@ -18,6 +20,7 @@ import numpy as np
 
 from sklearn.linear_model import LinearRegression
 
+from scipy import stats
 archivo = "C:/Users/jeron/OneDrive/Escritorio/CoinPredictor/Datos/bitcoin_semanal.csv"
 
 
@@ -175,7 +178,6 @@ def graficas_ciclos(c1, c2, c3, c4)->None:
     )
     mpf.show()
 
-
 def grafica_un_ciclo(c)->None:
     """
     Genera una gráfica de un ciclo específico.
@@ -202,6 +204,7 @@ def grafica_un_ciclo(c)->None:
         bbox=dict(boxstyle='round', facecolor='white', alpha=0.75, edgecolor='gray')
     )
     mpf.show()
+
 def grafica_historica(df, c1, c2, c3, c4)->None:
     """
     Genera una gráfica histórica completa de los datos.
@@ -278,7 +281,6 @@ def grafica_historica(df, c1, c2, c3, c4)->None:
 
 
     mpf.show()
-
 
 def fases_ciclo(c):
 
@@ -363,9 +365,6 @@ def fases_ciclo(c):
     out.index.name = "Date"
     return out
 
-
-
-
 def grafica_fases(c):
 
     """
@@ -393,6 +392,50 @@ def grafica_fases(c):
     plt.tight_layout()
     plt.show()
  
+def estadisticas_dataframe(c):
+    """
+    Calcula estadísticas descriptivas del DataFrame.
+    
+    """
+
+    periodos_anuales = 52
+    df = c.copy()
+    info_basica = {
+        'fecha_inicio': df.index[0],
+        'fecha_fin': df.index[-1],
+        'num_periodos': len(df),
+        'duracion_dias': (df.index[-1] - df.index[0]).days,
+        'precio_inicial': df['Close'].iloc[0],
+        'precio_final': df['Close'].iloc[-1],
+        'precio_minimo': df['Close'].min(),
+        'precio_maximo': df['Close'].max(),
+        'volumen_promedio': df['Volume'].mean(),
+        'volumen_total': df['Volume'].sum(),
+    }
+
+    returns = df['Close'].pct_change().dropna()
+    
+    
+
+    volatilidad = {
+        'volatilidad_periodo': returns.std() * 100,
+        'volatilidad_anual': returns.std() * np.sqrt(periodos_anuales) * 100,
+        'desviacion_estandar': returns.std(),
+        'varianza': returns.var(),
+        'rango_intercuartil': (returns.quantile(0.75) - returns.quantile(0.25)) * 100,
+        'coef_variacion': (returns.std() / returns.mean()) if returns.mean() != 0 else np.nan,
+    }
+
+
+
+
+    resumen = {
+        **info_basica,
+        **volatilidad,
+    }
+    
+    return resumen
+
 
 
 
@@ -470,42 +513,108 @@ def simulacion_montecarlo_simple(c4, semanas, sims,  alpha_rango, seed):
     )
     return pd.concat([c4, c4_sim]), c4_sim
 
-
-def grafica_simulacion_simple(c)->None:
+def simulacion_montecarlo_2(c):
     """
-    Genera una gráfica de la simulación de Montecarlo.
+    Simulación de Montecarlo avanzada para predecir precios futuros
+    basada en el ciclo actual de Bitcoin.
     """
+    simulaciones = 1000
+    duracion_simulacion = 52 #Semanas
 
-    fecha_max = c['Close'].idxmax()
-    fecha_min = c['Close'].idxmin()    
-    min = float(c.loc[fecha_min, 'Close'])
-    max = float(c.loc[fecha_max, 'Close']) 
-    prom = float(c['Close'].mean())
+    ultimo_precio = c['Close'].iloc[-1]
+    ultima_fecha = c.index[-1]
 
+    retornos = c['Close'].pct_change().dropna()
 
-    fig, axlist = mpf.plot(
-        c, type='candle', style='charles',
-        title='Ciclo 2024-2028 (en curso)', ylabel='Precio (USD)',
-        volume=True, mav=(3,6,9), returnfig=True
-    )
-    ax = axlist[0]
-    ax.text(
-        0.02, 0.98,
-        f"• Max Close: {max:,.0f} USD ({fecha_max:%Y-%m})\n"
-        f"• Min Close: {min:,.0f} USD ({fecha_min:%Y-%m})\n"
-        f"• Prom Close: {prom:,.0f} USD ({fecha_min:%Y-%m})",
-        transform=ax.transAxes, va='top', fontsize=10,
-        bbox=dict(boxstyle='round', facecolor='white', alpha=0.75, edgecolor='gray')
-    )
-    mpf.show()
+    mu = retornos.mean()
+    sigma = retornos.std()
 
+    close_to_open = (df['Open'] / df['Close'].shift(1)).dropna()
+    high_to_close = (df['High'] / df['Close']).dropna()
+    low_to_close = (df['Low'] / df['Close']).dropna()
+    
+    gap_mean = close_to_open.mean()
+    gap_std = close_to_open.std()
 
+    high_mean = high_to_close.mean()
+    high_std = high_to_close.std()
 
-c4_simulado, c4_s = simulacion_montecarlo_simple(c4, 10, 1000, 1.0, None)
+    low_mean = low_to_close.mean()
+    low_std = low_to_close.std()
+
+    volumen_returns = df['Volume'].pct_change().dropna()
+    volumen_mu = volumen_returns.mean()
+    volumen_sigma = volumen_returns.std()
+    ultimo_volumen = df['Volume'].iloc[-1]
+
+    fechas_f = pd.date_range(start=ultima_fecha + timedelta(weeks=1),  periods=duracion_simulacion,   freq='W')
+    
+
+    for sim in range(simulaciones):
+        closes = np.zeros(duracion_simulacion)
+        opens = np.zeros(duracion_simulacion)
+        highs = np.zeros(duracion_simulacion)
+        lows = np.zeros(duracion_simulacion)
+        volumes = np.zeros(duracion_simulacion)
+
+        current_close = ultimo_precio
+        current_volume = ultimo_volumen
+
+        for semana in range(duracion_simulacion):
+
+            # Simular Close con retornos aleatorios
+            random_return = np.random.normal(mu, sigma)
+            new_close = current_close * (1 + random_return)
+            closes[semana] = new_close
+            
+            # Simular Open (con gap respecto al Close anterior)
+            gap_factor = np.random.normal(gap_mean, gap_std)
+            gap_factor = max(0.8, min(1.2, gap_factor))  # Limitar gaps extremos
+            opens[semana] = current_close * gap_factor
+            
+            # Simular High (siempre mayor que Open y Close)
+            high_factor = abs(np.random.normal(high_mean, high_std))
+            high_factor = max(1.0, high_factor)  # Asegurar que High >= Close
+            highs[semana] = new_close * high_factor
+            highs[semana] = max(highs[semana], opens[semana], new_close)
+            
+            # Simular Low (siempre menor que Open y Close)
+            low_factor = abs(np.random.normal(low_mean, low_std))
+            low_factor = min(1.0, low_factor)  # Asegurar que Low <= Close
+            lows[semana] = new_close * low_factor
+            lows[semana] = min(lows[semana], opens[semana], new_close)
+            
+            # Simular Volume
+            volume_return = np.random.normal(volumen_mu, volumen_sigma)
+            new_volume = current_volume * (1 + volume_return)
+            new_volume = max(0, new_volume)  # Asegurar volumen positivo
+            volumes[semana] = new_volume
+            
+            # Actualizar para siguiente iteración
+            current_close = new_close
+            current_volume = new_volume
+
+        sim_df = pd.DataFrame({
+            'Open': opens,
+            'High': highs,
+            'Low': lows,
+            'Close': closes,
+            'Volume': volumes
+        }, index=fechas_f)
+
+    return pd.concat([c4, sim_df]), sim_df
+
+# c4_simulado, c4_s = simulacion_montecarlo_simple(c4, 10, 1000, 1.0, None)
+
+# grafica_un_ciclo(c4_s)
+# c4_simulado_ciclos = fases_ciclo(c4_simulado)
+# grafica_simulacion_simple(c4_simulado)
+
+c4_s, c4_s_s = simulacion_montecarlo_2(c4)
 
 grafica_un_ciclo(c4_s)
-# c4_simulado_ciclos = fases_ciclo(c4_simulado)
-grafica_simulacion_simple(c4_simulado)
+
+print(estadisticas_dataframe(c4_s))
 
 
 
