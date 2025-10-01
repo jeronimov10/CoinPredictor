@@ -469,79 +469,7 @@ def estadisticas_dataframe(c):
 
 #Simulacion Montecarlo ciclo actual esta simulacion de montecarlo es simple y no tiene en cuenta las fases del ciclo y solo se parctica como aporximado a posibles maixmos que vamos a encontarr sin embargo, no es bueno interpertarla por ciclos pues no tiene ciclos reales
 
-def simulacion_montecarlo_simple(c4, semanas, sims,  alpha_rango, seed):
-
-    """
-    Simulación de Montecarlo simple para predecir precios futuros
-    basada en el ciclo actual de Bitcoin.
-    """
-    rng = np.random.default_rng(seed)
-    c4 = c4.copy()
-
-   
-    
-
-    #Mu y sigma close
-    ret = np.log(c4["Close"]).diff().dropna()
-    mu = float(ret.mean())
-    sigma = float(ret.std(ddof=1))
-
-    if not np.isfinite(sigma) or sigma <= 0:
-        raise ValueError("No se pudo estimar una volatilidad semanal válida a partir de c4.")
-
-    #Mu y sigma volumen
-    dlogV = np.log(c4["Volume"].clip(lower=1)).diff().dropna()
-    mu_v  = float(dlogV.mean()) if len(dlogV) else 0.0
-    sig_v = float(dlogV.std(ddof=1)) if len(dlogV) and dlogV.std(ddof=1) > 0 else 0.25
-
-    
-    freq = pd.infer_freq(c4.index) or "W"
-    start = c4.index[-1] + pd.Timedelta(weeks=1)
-    idx_fut = pd.date_range(start=start, periods=semanas, freq=freq)
-
-    #Simulacion montecarlo precio close
-    S0 = float(c4["Close"].iloc[-1])
-    Z  = rng.normal(size=(sims, semanas))        
-    R  = mu + sigma * Z                          
-    log_paths = np.cumsum(R, axis=1)             
-    paths_close = S0 * np.exp(log_paths)         
-
-    
-    close_rep = np.median(paths_close, axis=0)   
-
-    
-    #Asignacion opens
-    opens = np.empty(semanas, dtype=float)
-    opens[0] = S0
-    if semanas > 1:
-        opens[1:] = close_rep[:-1]
-
-    
-    #Asignacion highs y lows
-    rango = np.maximum(0.0, alpha_rango * sigma)
-    max_oc = np.maximum(opens, close_rep)
-    min_oc = np.minimum(opens, close_rep)
-    highs  = max_oc * (1.0 + rango)
-    lows   = np.clip(min_oc * (1.0 - rango), 1e-8, None)
-
-    
-    #Simulacion montecarlo volumen
-    V0 = float(c4["Volume"].iloc[-1])
-    Zv = rng.normal(mu_v, sig_v, size=(sims, semanas))
-    logV_paths = np.cumsum(Zv, axis=1)
-    paths_vol = V0 * np.exp(logV_paths)          
-    vol_rep = np.median(paths_vol, axis=0)
-    vol_rep = np.maximum(vol_rep, 1.0)
-
-    
-    c4_sim = pd.DataFrame(
-        {"Open": opens, "High": highs, "Low": lows, "Close": close_rep, "Volume": vol_rep},
-        index=idx_fut
-    )
-    return pd.concat([c4, c4_sim]), c4_sim
-
-#Simulacion montecarlo 2
-def simulacion_montecarlo_2(c):
+def simulacion_montecarlo(c):
     """
     Simulación de Montecarlo avanzada para predecir precios futuros
     basada en el ciclo actual de Bitcoin.
@@ -731,17 +659,22 @@ def simulacion_series_de_tiempo(c):
 
 
 #Simulacion robusta cadenas markovianas
-def calculo_probabilidades_cambio_fase(df):
+def calculo_probabilidades_cambio_fase(c):
 
 
-    d = df.copy()
+    d = c.copy()
     d = fases_ciclo(d)
     fases = d['Fase'].unique()
         
     
-    transiciones = {fase: {f: 0 for f in fases} for fase in fases}
+    transiciones = {}
+    for fase in fases:
+        dic_i = {}
+        for f in fases:
+            dic_i[f] = 0
+        transiciones[fase] = dic_i
         
-    
+    #cambios fases
     for i in range(len(d)-1):
         fase_actual = d['Fase'].iloc[i]
         fase_siguiente = d['Fase'].iloc[i+1]
@@ -750,7 +683,7 @@ def calculo_probabilidades_cambio_fase(df):
     
     prob_transicion = pd.DataFrame(transiciones)
         
-        
+    #Normalizamos   
     for fase in fases:
         total = prob_transicion[fase].sum()
         if total > 0:
