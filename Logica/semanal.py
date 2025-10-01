@@ -14,6 +14,7 @@ from scipy import stats
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 import pmdarima as pm
+import random
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -601,7 +602,7 @@ def simulacion_montecarlo_2(c):
     return pd.concat([c4, sim_df]), sim_df
 
 
-#Simulacion 3
+#Simulacion 3 series de tiempo ARIMA
 
 def simulacion_series_de_tiempo(c):
     """
@@ -699,6 +700,26 @@ def simulacion_series_de_tiempo(c):
 
 
 #Simulacion robusta cadenas markovianas
+
+def simulacion_cadenas_markov(c):
+
+    """
+        Simulacion usando las cadenas de markov.
+        Pseudocodigo de la implementacion en el readme
+        Esta simulacion principalmente intenta 
+        
+    
+    """
+
+
+    d = c.copy()
+
+
+
+
+
+
+    return
 
 
 #Pruebas de las funciones
