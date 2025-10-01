@@ -291,14 +291,19 @@ def fases_ciclo(c):
     df = c.copy()
     df.index.name = "Date"
 
+   
     ventana = 4
-    tol_slope_pct = 0.005
-    rango_rec_pct = 0.08
-    tol_ret = 0.05
+    tol_slope_pct = 0.005      
+    rango_rec_pct = 0.08       
+    tol_ret = 0.05             
     min_run = 5
 
     precios_cierre = df["Close"].astype(float).values
     logc = np.log(precios_cierre)
+
+
+    rend = pd.Series(precios_cierre).pct_change().values
+    vol_roll = pd.Series(rend).rolling(ventana).std().values
 
     fases = []
     slopes = []
@@ -314,29 +319,55 @@ def fases_ciclo(c):
             ranges.append(np.nan)
             continue
 
+        
         y = logc[i-ventana:i]
         lr.fit(X, y)
         slope_log = lr.coef_[0]
-        slope_pct = float(slope_log)
+        slope_pct = float(slope_log)   
 
+        
         w = precios_cierre[i-ventana:i]
         rango_rel = (w.max() - w.min()) / w.mean()
 
+        
         ret_net = float(logc[i-1] - logc[i-ventana])
 
-        if rango_rel <= rango_rec_pct and abs(slope_pct) <= tol_slope_pct:
-            fase = 'Recuperación'
-        elif (slope_pct >  tol_slope_pct) and (ret_net >  tol_ret):
-            fase = 'Alcista'
-        elif (slope_pct < -tol_slope_pct) and (ret_net < -tol_ret):
-            fase = 'Bajista'
+        
+        vol = vol_roll[i-1] if not np.isnan(vol_roll[i-1]) else None
+        if vol is not None and vol > 0:
+           
+            tol_slope_dyn = max(tol_slope_pct, 0.5 * vol)          
+            tol_ret_dyn   = max(tol_ret,       1.0 * vol)          
+            rango_lat_dyn = max(rango_rec_pct, 1.2 * vol)          
         else:
-            fase = 'Recuperación'
+            tol_slope_dyn = tol_slope_pct
+            tol_ret_dyn   = tol_ret
+            rango_lat_dyn = rango_rec_pct
+
+        
+       
+        if (rango_rel <= rango_lat_dyn) and (abs(slope_pct) <= tol_slope_dyn):
+            fase = 'Recuperacion'
+
+        else:
+            
+            if (slope_pct >  tol_slope_dyn) and (ret_net >  tol_ret_dyn):
+                fase = 'Alcista'
+            elif (slope_pct < -tol_slope_dyn) and (ret_net < -tol_ret_dyn):
+                fase = 'Bajista'
+            else:
+                
+                if abs(slope_pct) > tol_slope_dyn and rango_rel > rango_lat_dyn:
+                    fase = 'Alcista' if slope_pct > 0 else 'Bajista'
+                else:
+                    
+                    fase = 'Recuperacion'
 
         fases.append(fase)
         slopes.append(slope_pct)
         ranges.append(rango_rel)
 
+    
     fases_arr = np.array(fases, dtype=object)
     start = 0
     for i in range(1, len(fases_arr)+1):
@@ -700,7 +731,34 @@ def simulacion_series_de_tiempo(c):
 
 
 #Simulacion robusta cadenas markovianas
+def calculo_probabilidades_cambio_fase(df):
 
+
+    d = df.copy()
+    d = fases_ciclo(d)
+    fases = d['Fase'].unique()
+        
+    
+    transiciones = {fase: {f: 0 for f in fases} for fase in fases}
+        
+    
+    for i in range(len(d)-1):
+        fase_actual = d['Fase'].iloc[i]
+        fase_siguiente = d['Fase'].iloc[i+1]
+        transiciones[fase_actual][fase_siguiente] += 1
+            
+    
+    prob_transicion = pd.DataFrame(transiciones)
+        
+        
+    for fase in fases:
+        total = prob_transicion[fase].sum()
+        if total > 0:
+            prob_transicion[fase] = prob_transicion[fase] / total
+                
+    return prob_transicion
+
+     
 def simulacion_cadenas_markov(c):
 
     """
@@ -752,6 +810,15 @@ def simulacion_cadenas_markov(c):
 # grafica_simple(l)
 # grafica_simple(a)
 
+b = calculo_probabilidades_cambio_fase(df)
+print("Indefinido")
+print(b['Indefinido'])
+print("Alcista")
+print(b['Alcista'])
+print("Bajista")
+print(b['Bajista'])
+print("Recuperacion")
+print(b['Recuperacion'])
 
 
 
