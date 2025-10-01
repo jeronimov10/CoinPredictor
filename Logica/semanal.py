@@ -475,7 +475,7 @@ def simulacion_montecarlo(c):
     basada en el ciclo actual de Bitcoin.
     """
     simulaciones = 1000
-    duracion_simulacion = 52 #Semanas
+    duracion_simulacion = 52 
 
     ultimo_precio = c['Close'].iloc[-1]
     ultima_fecha = c.index[-1]
@@ -518,7 +518,7 @@ def simulacion_montecarlo(c):
 
         for semana in range(duracion_simulacion):
 
-            # Simular Close con retornos aleatorios
+            # Simular Close
             random_return = np.random.normal(mu, sigma)
             new_close = current_close * (1 + random_return)
             closes[semana] = new_close
@@ -658,7 +658,89 @@ def simulacion_series_de_tiempo(c):
 
 
 
-#Simulacion robusta cadenas markovianas
+#Simulacion robusta cadenas 
+
+def calcular_estadisticas_duracion_fases(c):
+    """
+    
+    """
+
+    d = c.copy()
+    
+
+
+    estadisticas = {}
+    fases = d['Fase'].unique()
+    
+    for fase in fases:
+        if fase == 'Indefinido':
+            continue
+        
+        duraciones = []
+        contador = 0
+        
+        for i in range(len(df)):
+            if d['Fase'].iloc[i] == fase:
+                contador += 1
+            else:
+                if contador > 0:
+                    duraciones.append(contador)
+                    contador = 0
+        
+        if contador > 0:
+            duraciones.append(contador)
+        
+        if len(duraciones) > 0:
+            estadisticas[fase] = {
+                'promedio': np.mean(duraciones),
+                'std': np.std(duraciones),
+                'max': np.max(duraciones),
+                'min': np.min(duraciones)
+            }
+        else:
+            print('No fue posible obtner las estadisticas de las fases.')
+    return estadisticas
+
+def calcular_estadisticas_cambio_precio(c):
+
+    """
+    
+    
+    """
+
+    d = c.copy()
+    
+    fases_activas = [f for f in d['Fase'].unique() if f != 'Indefinido']
+
+    estadisticas_cambio = {}
+   
+
+    for fase in fases_activas:
+        df_fase = d[d['Fase'] == fase].copy()
+
+
+        if len(df_fase) > 1:
+
+            cambios = df_fase['Pct_Change'].dropna()
+
+            ratio_high = (df_fase['High'] / df_fase['Close']).mean()
+            ratio_low = (df_fase['Low'] / df_fase['Close']).mean()
+            ratio_open = (df_fase['Open'] / df_fase['Close']).mean()
+            ratio_volume = (df_fase['Volume'] / df_fase['Close']).mean()
+
+            estadisticas_cambio[fase] = {
+                'cambio_promedio': cambios.mean(),
+                'cambio_std': cambios.std(),
+                'ratio_high': ratio_high,
+                'ratio_low': ratio_low,
+                'ratio_open': ratio_open,
+                'ratio_volume': ratio_volume
+            }
+
+
+    return estadisticas_cambio
+
+
 def calculo_probabilidades_cambio_fase(c):
 
 
@@ -703,14 +785,118 @@ def simulacion_cadenas_markov(c):
     """
 
 
-    d = c.copy()
+    d = fases_ciclo(c.copy())
+
+    
+
+    estadisticas_cambio = calcular_estadisticas_cambio_precio(d)
+    estadisticas_duracion = calcular_estadisticas_duracion_fases(d)
+
+    matriz_probabilidades = calculo_probabilidades_cambio_fase(d)
+
+    num_semanas = 10
+
+    k = 1.5
+
+    fases_activas = [f for f in d['Fase'].unique() if f != 'Indefinido'] #Eliminar la fase indefinido
 
 
+    #Quitar indefinido de la matriz
+    if 'Indefinido' in matriz_probabilidades.columns:
+        matriz_filtrada = matriz_probabilidades[fases_activas].loc[fases_activas]
+    else:
+        matriz_filtrada = matriz_probabilidades
+
+    ultima_fase = d['Fase'].iloc[-1]
+
+    fases_simuladas = []
+    fase_actual = ultima_fase
+    contador_fase = 0
+
+    for semana in range(num_semanas):
+        contador_fase += 1
+
+        if fase_actual in estadisticas_duracion:
+            duracion_max = (estadisticas_duracion[fase_actual]['promedio'] + k * estadisticas_duracion[fase_actual]['std'])
 
 
+        if contador_fase < duracion_max:
+            probabilidades = matriz_filtrada[fase_actual].values
+            fases = matriz_filtrada.index.tolist()
+            fase_siguiente = np.random.choice(fases, p=probabilidades)
+        else:
+            probabilidades = matriz_filtrada[fase_actual].copy()
+            probabilidades[fase_actual] = 0
 
 
-    return
+            if probabilidades.sum() > 0:
+                probabilidades = probabilidades / probabilidades.sum()
+                fases = matriz_filtrada.index.tolist()
+                fase_siguiente = np.random.choice(fases, p=probabilidades.values)
+            else:
+                fases_disponibles = [f for f in fases_activas if f != fase_actual]
+                fase_siguiente = np.random.choice(fases_disponibles)
+
+        if fase_siguiente != fase_actual:
+            contador_fase = 0
+
+        fases_simuladas.append(fase_siguiente)
+        fase_actual = fase_siguiente
+
+    # Simular precios OHLCV
+    ultimo_close = d['Close'].iloc[-1]
+    
+    precios_open = []
+    precios_high = []
+    precios_low = []
+    precios_close = []
+    volumenes = []
+    
+    precio_close_actual = ultimo_close
+    
+    for fase in fases_simuladas:
+        stats = estadisticas_cambio[fase]
+        
+        
+        cambio_porcentual = np.random.normal(stats['cambio_promedio'], stats['cambio_std'])
+        
+        
+        precio_close = precio_close_actual * (1 + cambio_porcentual)
+        
+        
+        precio_open = precio_close * stats['ratio_open']
+        precio_high = precio_close * stats['ratio_high']
+        precio_low = precio_close * stats['ratio_low']
+        volumen = precio_close * stats['ratio_volume']
+        
+        
+        precio_high = max(precio_high, precio_open, precio_close)
+        precio_low = min(precio_low, precio_open, precio_close)
+        
+        
+        precios_open.append(precio_open)
+        precios_high.append(precio_high)
+        precios_low.append(precio_low)
+        precios_close.append(precio_close)
+        volumenes.append(volumen)
+        
+        
+        precio_close_actual = precio_close
+    
+    
+    
+    ultima_fecha = d.index[-1]
+    fechas_futuras = pd.date_range(start=ultima_fecha + pd.Timedelta(weeks=1),periods=num_semanas,freq='W')
+    
+    df_simulado = pd.DataFrame({
+        'Open': precios_open,
+        'High': precios_high,
+        'Low': precios_low,
+        'Close': precios_close,
+        'Volume': volumenes
+    }, index=fechas_futuras)
+    
+    return df_simulado
 
 
 #Pruebas de las funciones
@@ -743,15 +929,25 @@ def simulacion_cadenas_markov(c):
 # grafica_simple(l)
 # grafica_simple(a)
 
-b = calculo_probabilidades_cambio_fase(df)
-print("Indefinido")
-print(b['Indefinido'])
-print("Alcista")
-print(b['Alcista'])
-print("Bajista")
-print(b['Bajista'])
-print("Recuperacion")
-print(b['Recuperacion'])
+# b = calculo_probabilidades_cambio_fase(c3)
+# print("Indefinido")
+# print(b['Indefinido'])
+# print("Alcista")
+# print(b['Alcista'])
+# print("Bajista")
+# print(b['Bajista'])
+# print("Recuperacion")
+# print(b['Recuperacion'])
+
+
+d = simulacion_cadenas_markov(df)
+print(d.info())
+
+grafica_simple(d)
+
+
+
+
 
 
 
