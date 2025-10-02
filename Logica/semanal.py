@@ -813,6 +813,7 @@ def simulacion_cadenas_markov(c):
     fase_actual = ultima_fase
     contador_fase = 0
 
+    #Simular fase
     for semana in range(num_semanas):
         contador_fase += 1
 
@@ -899,6 +900,39 @@ def simulacion_cadenas_markov(c):
     return df_simulado
 
 
+def multiples_simulaciones(c):
+
+    """"
+    
+    
+    """
+
+    d = c.copy()
+    num_simulaciones = 100
+    todas_simulaciones = []
+    
+    for i in range(num_simulaciones):
+        df_sim = simulacion_cadenas_markov(d)
+        todas_simulaciones.append(df_sim)
+
+    df_resultado = todas_simulaciones[0].copy()
+    num_semanas = len(df_resultado)
+
+    for col in ['Open', 'High', 'Low', 'Close', 'Volume']:
+        valores_promedio = []
+        
+        for semana_idx in range(num_semanas):
+            valores_semana = [sim.iloc[semana_idx][col] for sim in todas_simulaciones]
+            promedio = np.mean(valores_semana)
+            valores_promedio.append(promedio)
+        
+        df_resultado[col] = valores_promedio
+
+
+
+    return df_resultado
+
+
 #Pruebas de las funciones
 
 
@@ -940,12 +974,19 @@ def simulacion_cadenas_markov(c):
 # print(b['Recuperacion'])
 
 
-d = simulacion_cadenas_markov(df)
-print(d.info())
+# d = multiples_simulaciones(df)
+# print(d.info())
 
-grafica_simple(d)
+# grafica_simple(d)
+
+# fases = calculo_probabilidades_cambio_fase(df).index.tolist()
 
 
+# probabilidades = calculo_probabilidades_cambio_fase(df)['Alcista'].values
+
+# fase_siguiente = np.random.choice(fases, p=probabilidades)
+
+# print(fase_siguiente)
 
 
 
