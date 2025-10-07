@@ -292,4 +292,4 @@ def grafica_fases(c):
 
 
 
-
+print(df.size)
