@@ -561,7 +561,7 @@ def simulacion_montecarlo(c):
     return pd.concat([c4, sim_df]), sim_df
 
 
-#Simulacion 3 series de tiempo ARIMA
+#Simulacion 2 series de tiempo ARIMA
 
 def simulacion_series_de_tiempo(c):
     """
@@ -658,7 +658,7 @@ def simulacion_series_de_tiempo(c):
 
 
 
-#Simulacion robusta cadenas 
+#Simulacion 3 robusta cadenas de markov
 
 def calcular_estadisticas_duracion_fases(c):
     """
@@ -910,11 +910,12 @@ def multiples_simulaciones(c):
     d = c.copy()
     num_simulaciones = 100
     todas_simulaciones = []
-    
+    #Simula n veces
     for i in range(num_simulaciones):
         df_sim = simulacion_cadenas_markov(d)
         todas_simulaciones.append(df_sim)
 
+    #Construye el dataframe
     df_resultado = todas_simulaciones[0].copy()
     num_semanas = len(df_resultado)
 
@@ -987,6 +988,12 @@ def multiples_simulaciones(c):
 # fase_siguiente = np.random.choice(fases, p=probabilidades)
 
 # print(fase_siguiente)
+
+
+
+
+    
+
 
 
 

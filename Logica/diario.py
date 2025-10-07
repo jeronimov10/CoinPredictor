@@ -290,6 +290,3 @@ def grafica_fases(c):
     plt.show()
 
 
-
-
-print(df.size)
