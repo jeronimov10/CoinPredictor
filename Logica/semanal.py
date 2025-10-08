@@ -180,6 +180,7 @@ def grafica_simple(c)->None:
     """
     Genera una gráfica de un ciclo específico.
     """
+    
     fecha_max = c['Close'].idxmax()
     fecha_min = c['Close'].idxmin()    
     min = float(c.loc[fecha_min, 'Close'])
@@ -558,7 +559,7 @@ def simulacion_montecarlo(c):
             'Volume': volumes
         }, index=fechas_f)
 
-    return pd.concat([c4, sim_df]), sim_df
+    return pd.concat([c, sim_df]), sim_df
 
 
 #Simulacion 2 series de tiempo ARIMA
