@@ -1,2 +1,3 @@
 # CoinPredictor
-Correciones hasta la simulacion de montecarlo sencilla
+
+7 octubre 2025 redes nerunales y logica cambios merge
