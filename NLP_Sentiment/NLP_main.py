@@ -59,7 +59,7 @@ API_KEY = Path(__file__).parent.joinpath("API_KEY").read_text().strip()
 def news_api():
 
     keyword = 'BTC'
-    date = '2025-10-10'
+    date = '2025-10-13'
 
     url = (
         'https://newsapi.org/v2/everything?'
@@ -102,9 +102,15 @@ def news_api():
             num_articles += 1
 
 
-    final_score = total_score / num_articles
 
-    print(f'Sentimiento general: {"Positivo" if final_score >= 0.15 else "Negativo" if final_score <= -0.15 else "Neutral"} {final_score}')
+    if num_articles == 0:
+        print('No hay articulos disponibles')
+
+    else:
+
+        final_score = total_score / num_articles
+
+        print(f'Sentimiento general: {"Positivo" if final_score >= 0.15 else "Negativo" if final_score <= -0.15 else "Neutral"} {final_score}')
 
 
 news_api()
