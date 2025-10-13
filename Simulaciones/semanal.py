@@ -476,7 +476,7 @@ def simulacion_montecarlo(c):
     basada en el ciclo actual de Bitcoin.
     """
     simulaciones = 1000
-    duracion_simulacion = 52 
+    duracion_simulacion = 10 
 
     ultimo_precio = c['Close'].iloc[-1]
     ultima_fecha = c.index[-1]
@@ -938,17 +938,14 @@ def multiples_simulaciones(c):
 #Pruebas de las funciones
 
 
-# c4_simulado, c4_s = simulacion_montecarlo_simple(c4, 10, 1000, 1.0, None)
 
-# grafica_un_ciclo(c4_s)
-# c4_simulado_ciclos = fases_ciclo(c4_simulado)
-# grafica_simulacion_simple(c4_simulado)
 
-# c4_s, c4_s_s = simulacion_montecarlo_2(c4)
+# c4_s, c4_s_s = simulacion_montecarlo(c4)
 
-# grafica_un_ciclo(c4_s)
+# grafica_simple(c4_s)
+# grafica_simple(c4_s_s)
 
-# print(estadisticas_dataframe(c4_s))
+
 
 # fases_ciclo(df)
 # grafica_un_ciclo(df)
@@ -990,6 +987,14 @@ def multiples_simulaciones(c):
 
 # print(fase_siguiente)
 
+# d,dd = simulacion_series_de_tiempo(df)
+
+# grafica_simple(d)
+# print(d.info())
+
+# l = multiples_simulaciones(df)
+# grafica_simple(l)
+# print(l.info())
 
 
 
