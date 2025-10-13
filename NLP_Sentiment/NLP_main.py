@@ -59,7 +59,7 @@ API_KEY = Path(__file__).parent.joinpath("API_KEY").read_text().strip()
 def news_api():
 
     keyword = 'BTC'
-    date = '2025-10-13'
+    date = '2025-10-12'
 
     url = (
         'https://newsapi.org/v2/everything?'

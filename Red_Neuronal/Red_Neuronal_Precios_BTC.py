@@ -7,6 +7,8 @@ from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers import LSTM, Dense
 
+from datetime import timedelta
+
 
 def cargar_depurar_datos(archivo):
     """
@@ -112,6 +114,8 @@ def red_LSTM():
     p = np.mean(prediccion)
     t = np.mean(x_test)
 
+    fechas_validacion = set_validacion.index[time_step:]
+    valores_reales = set_validacion.iloc[time_step:, 0].values
 
     #Accuracy
     ac = 0
@@ -128,11 +132,11 @@ def red_LSTM():
         if prediccion[i] > valores_reales[i-1]:
             rentability*= valores_reales[i]/valores_reales[i-1]
 
-    print('La rentabilidad del modelo es: ' + (rentability-1)*100,"%")
+    print('La rentabilidad del modelo es: ' + str((rentability-1)*100)+"%")
 
     #Rentabilidad diaria
     daily_return = (rentability ** (1/len(valores_reales))) - 1
-    print('La rentabilidad diaria del modelo es: ' + daily_return * 100, "% por día")
+    print('La rentabilidad diaria del modelo es: ' + str(daily_return * 100) + "% por día")
 
 
 
@@ -156,7 +160,7 @@ def red_LSTM():
     predicciones_futuras = np.array(predicciones_futuras).reshape(-1, 1)
     predicciones_futuras = scaler.inverse_transform(predicciones_futuras)
 
-    from datetime import timedelta
+    
     ultima_fecha = df.index[-1]
     fechas_futuras = [ultima_fecha + timedelta(days=i+1) for i in range(dias_futuros)]
 
@@ -167,9 +171,7 @@ def red_LSTM():
     print("="*60)
 
     #Grafica
-    fechas_validacion = set_validacion.index[time_step:]
-    valores_reales = set_validacion.iloc[time_step:, 0].values
-
+ 
     plt.figure(figsize=(12, 6))
     plt.plot(valores_reales, label='Valor real de la acción', color='blue', linewidth=1.5)
     plt.plot(prediccion, label='Predicción de la acción', color='red', linewidth=1.5)
@@ -186,5 +188,3 @@ def red_LSTM():
     return modelo
 
 
-
-red_LSTM()
