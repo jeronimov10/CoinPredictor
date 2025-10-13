@@ -486,48 +486,54 @@ def simulacion_montecarlo(c):
     mu = retornos.mean()
     sigma = retornos.std()
 
-    close_to_open = (df['Open'] / df['Close'].shift(1)).dropna()
-    high_to_close = (df['High'] / df['Close']).dropna()
-    low_to_close = (df['Low'] / df['Close']).dropna()
+    close_to_open = (c['Open'] / c['Close'].shift(1)).dropna()
+    high_to_close = (c['High'] / c['Close']).dropna()
+    low_to_close  = (c['Low']  / c['Close']).dropna()
     
     gap_mean = close_to_open.mean()
-    gap_std = close_to_open.std()
+    gap_std  = close_to_open.std()
 
     high_mean = high_to_close.mean()
-    high_std = high_to_close.std()
+    high_std  = high_to_close.std()
 
     low_mean = low_to_close.mean()
-    low_std = low_to_close.std()
+    low_std  = low_to_close.std()
 
-    volumen_returns = df['Volume'].pct_change().dropna()
+    volumen_returns = c['Volume'].pct_change().dropna()
     volumen_mu = volumen_returns.mean()
     volumen_sigma = volumen_returns.std()
-    ultimo_volumen = df['Volume'].iloc[-1]
+    ultimo_volumen = c['Volume'].iloc[-1]
 
-    fechas_f = pd.date_range(start=ultima_fecha + timedelta(weeks=1),  periods=duracion_simulacion,   freq='W')
+    fechas_f = pd.date_range(start=ultima_fecha + timedelta(weeks=1), periods=duracion_simulacion, freq='W')
     
+    
+    opens_all   = np.zeros((simulaciones, duracion_simulacion))
+    highs_all   = np.zeros((simulaciones, duracion_simulacion))
+    lows_all    = np.zeros((simulaciones, duracion_simulacion))
+    closes_all  = np.zeros((simulaciones, duracion_simulacion))
+    volumes_all = np.zeros((simulaciones, duracion_simulacion))
 
     for sim in range(simulaciones):
-        closes = np.zeros(duracion_simulacion)
-        opens = np.zeros(duracion_simulacion)
-        highs = np.zeros(duracion_simulacion)
-        lows = np.zeros(duracion_simulacion)
+        opens   = np.zeros(duracion_simulacion)
+        highs   = np.zeros(duracion_simulacion)
+        lows    = np.zeros(duracion_simulacion)
+        closes  = np.zeros(duracion_simulacion)
         volumes = np.zeros(duracion_simulacion)
 
-        current_close = ultimo_precio
+        current_close  = ultimo_precio
         current_volume = ultimo_volumen
 
         for semana in range(duracion_simulacion):
+
+            # Simular Open
+            gap_factor = np.random.normal(gap_mean, gap_std)
+            gap_factor = max(0.8, min(1.2, gap_factor)) 
+            opens[semana] = current_close * gap_factor
 
             # Simular Close
             random_return = np.random.normal(mu, sigma)
             new_close = current_close * (1 + random_return)
             closes[semana] = new_close
-            
-            # Simular Open 
-            gap_factor = np.random.normal(gap_mean, gap_std)
-            gap_factor = max(0.8, min(1.2, gap_factor)) 
-            opens[semana] = current_close * gap_factor
             
             # Simular High 
             high_factor = abs(np.random.normal(high_mean, high_std))
@@ -547,17 +553,43 @@ def simulacion_montecarlo(c):
             new_volume = max(0, new_volume) 
             volumes[semana] = new_volume
             
-            
-            current_close = new_close
+            current_close  = new_close
             current_volume = new_volume
 
-        sim_df = pd.DataFrame({
-            'Open': opens,
-            'High': highs,
-            'Low': lows,
-            'Close': closes,
-            'Volume': volumes
-        }, index=fechas_f)
+        opens_all[sim] = opens
+        highs_all[sim] = highs
+        lows_all[sim] = lows
+        closes_all[sim] = closes
+        volumes_all[sim] = volumes
+
+   
+    mean_open = opens_all.mean(axis=0)
+    mean_high = highs_all.mean(axis=0)
+    mean_low = lows_all.mean(axis=0)
+    mean_close = closes_all.mean(axis=0)
+    mean_volume = volumes_all.mean(axis=0)
+
+    sim_df = pd.DataFrame({
+        'Open':   mean_open,
+        'High':   mean_high,
+        'Low':    mean_low,
+        'Close':  mean_close,
+        'Volume': mean_volume
+    }, index=fechas_f)
+
+    
+    std_open_prom = opens_all.std(axis=0).mean()
+    std_high_prom = highs_all.std(axis=0).mean()
+    std_low_prom = lows_all.std(axis=0).mean()
+    std_close_prom = closes_all.std(axis=0).mean()
+    std_volume_prom = volumes_all.std(axis=0).mean()
+
+    
+    print("Desviación estándar promedio (Open):",   std_open_prom)
+    print("Desviación estándar promedio (High):",   std_high_prom)
+    print("Desviación estándar promedio (Low):",    std_low_prom)
+    print("Desviación estándar promedio (Close):",  std_close_prom)
+    print("Desviación estándar promedio (Volume):", std_volume_prom)
 
     return pd.concat([c, sim_df]), sim_df
 
@@ -940,12 +972,13 @@ def multiples_simulaciones(c):
 
 
 
-# c4_s, c4_s_s = simulacion_montecarlo(c4)
+# c4_s, c4_s_s = simulacion_montecarlo(df)
 
-# grafica_simple(c4_s)
+# print(estadisticas_dataframe(c4_s_s))
+
 # grafica_simple(c4_s_s)
 
-
+# print(c4_s_s.info())
 
 # fases_ciclo(df)
 # grafica_un_ciclo(df)
