@@ -972,13 +972,17 @@ def multiples_simulaciones(c):
 
 
 
-#c4_s, c4_s_s = simulacion_montecarlo(df)
+# c4_s, c4_s_s = simulacion_montecarlo(df)
 
-#print(estadisticas_dataframe(c4_s_s))
+# print(estadisticas_dataframe(c4_s_s))
 
-#grafica_simple(c4_s_s)
+# grafica_simple(c4_s_s)
 
-#print(c4_s_s.info())
+# print(c4_s_s.info())
+
+c4_s, c4_s_s = simulacion_series_de_tiempo(df)
+grafica_simple(c4_s)
+estadisticas_dataframe(c4_s)
 
 # fases_ciclo(df)
 # grafica_un_ciclo(df)
