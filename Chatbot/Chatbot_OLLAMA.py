@@ -3,13 +3,13 @@ from langchain_core.prompts import ChatPromptTemplate
 
 template = """
 
-Answer the question below.
+Responde la pregunta de abajo.
 
-Here is the conversation history: {context}
+Esta es la historia o contexto de la conversacion: {context}
 
-Question: {question}
+Pregunta: {question}
 
-Answer: 
+Respuesta: 
 """
 
 model = OllamaLLM(model="llama3")
