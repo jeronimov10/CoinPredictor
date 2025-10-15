@@ -421,7 +421,7 @@ def grafica_fases(c):
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
- 
+
 def estadisticas_dataframe(c):
     """
     Calcula estadísticas descriptivas del DataFrame.
@@ -806,7 +806,7 @@ def calculo_probabilidades_cambio_fase(c):
                 
     return prob_transicion
 
-     
+
 def simulacion_cadenas_markov(c):
 
     """
@@ -980,9 +980,9 @@ def multiples_simulaciones(c):
 
 # print(c4_s_s.info())
 
-c4_s, c4_s_s = simulacion_series_de_tiempo(df)
-grafica_simple(c4_s)
-estadisticas_dataframe(c4_s)
+# c4_s, c4_s_s = simulacion_series_de_tiempo(df)
+# grafica_simple(c4_s)
+# estadisticas_dataframe(c4_s)
 
 # fases_ciclo(df)
 # grafica_un_ciclo(df)

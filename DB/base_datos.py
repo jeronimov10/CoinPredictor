@@ -8,7 +8,7 @@ def connect():
         connection = None
         params = config()
         print('Conectando a la base de datos de postgreSQL...')
-        connection = psycopg2.connect(**params) #extraer todo de los params
+        connection = psycopg2.connect(**params) 
 
         crsr = connection.cursor()
         print('PostgreSQL version')
