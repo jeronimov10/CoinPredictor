@@ -1,9 +1,3 @@
-# import ollama
-# response = ollama.chat(model='llama3', messages=[
-# {'role': 'user', 'content': 'Explícame la teoría de la relatividad en pocas palabras.'}
-# ])
-# print(response['message']['content'])
-
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 
