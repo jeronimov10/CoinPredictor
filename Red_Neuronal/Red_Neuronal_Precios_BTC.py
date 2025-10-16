@@ -9,6 +9,10 @@ from keras.layers import LSTM, Dense
 
 from datetime import timedelta
 
+#Imports foraneos
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 def cargar_depurar_datos(archivo):
     """

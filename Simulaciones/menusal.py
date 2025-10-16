@@ -10,6 +10,9 @@ import yfinance as yf
 
 import numpy as np
 
+#Imports foraneos
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 archivo = "C:/Users/jeron/OneDrive/Escritorio/CoinPredictor/Datos/bitcoin_mensual.csv"
 

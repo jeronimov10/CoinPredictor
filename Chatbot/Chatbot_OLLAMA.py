@@ -1,6 +1,10 @@
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 
+#Imports foraneos
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 template = """
 
 Responde la pregunta de abajo.
