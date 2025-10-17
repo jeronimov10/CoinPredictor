@@ -14,41 +14,10 @@ import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def cargar_depurar_datos(archivo):
-    """
-    Carga y depura un archivo CSV de precios de Bitcoin mensual,
-    devolviendo tanto el DataFrame limpio como una estructura
-    tipo lista de diccionarios de diccionarios.
-    """
-    
-    df = pd.read_csv(archivo, skiprows=2)
 
-    
-    df = df.rename(columns={
-        "Date": "Date",
-        "Unnamed: 1": "Close",
-        "Unnamed: 2": "High",
-        "Unnamed: 3": "Low",
-        "Unnamed: 4": "Open",
-        "Unnamed: 5": "Volume"
-    })
 
-    
-    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-
-    
-    for col in ["Close", "High", "Low", "Open", "Volume"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-
-   
-    df.dropna(inplace=True)
-
-   
-    df.set_index("Date", inplace=True)
-
-    return df
-archivo = "C:/Users/jeron/OneDrive/Escritorio/CoinPredictor/Datos/bitcoin_diario.csv"
-df = cargar_depurar_datos(archivo)
+from Datos.datos import cargar_depurar_datos, archivo_diario
+df = cargar_depurar_datos(archivo_diario)
 
 
 def red_LSTM():
@@ -190,5 +159,118 @@ def red_LSTM():
 
 
     return modelo
+
+
+
+def predecir_ohlcv_30d(modelo, df, scaler=None, time_step=60, dias_futuros=30, k_rel=30, col_ref='High'):
+    """
+    Genera un DataFrame OHLCV con predicciones para los próximos `dias_futuros` días.
+    - modelo: modelo LSTM ya entrenado (como el que devuelves en red_LSTM()).
+    - df: DataFrame histórico con índice de fechas y columnas: ['Open','High','Low','Close','Volume'].
+    - scaler: MinMaxScaler usado en el entrenamiento (ideal). Si es None, se ajusta sobre df[col_ref].
+    - time_step: ventana usada en el entrenamiento (tu código usa 60).
+    - dias_futuros: horizonte de predicción (por defecto 30).
+    - k_rel: ventana (días recientes) para estimar relaciones OHLC con respecto a High.
+    - col_ref: columna objetivo usada en el LSTM (en tu código: 'High').
+
+    Devuelve: DataFrame con índice de fechas futuras y columnas ['Open','High','Low','Close','Volume'].
+    """
+
+    
+    req_cols = {'Open','High','Low','Close','Volume'}
+    if not req_cols.issubset(df.columns):
+        raise ValueError(f"El DataFrame debe contener columnas {req_cols}. Encontradas: {df.columns.tolist()}")
+
+    if len(df) < time_step + 5:
+        raise ValueError("df no tiene suficientes filas para construir el último bloque de predicción.")
+
+    
+    freq = pd.infer_freq(df.index)
+    if freq is None:
+        
+        freq = 'D'
+
+   
+    fitted_locally = False
+    if scaler is None:
+        scaler = MinMaxScaler(feature_range=(0,1))
+        
+        scaler.fit(df[col_ref].values.reshape(-1,1))
+        fitted_locally = True  
+
+    
+    ultimo_bloque = df[col_ref].values[-time_step:]
+    ultimo_bloque_escalado = scaler.transform(ultimo_bloque.reshape(-1, 1))
+
+    
+    pred_high_scaled = []
+    bloque_actual = ultimo_bloque_escalado.copy()
+    for _ in range(dias_futuros):
+        X_futuro = bloque_actual.reshape(1, time_step, 1)
+        pred_esc = modelo.predict(X_futuro, verbose=0)
+        pred_high_scaled.append(pred_esc[0,0])
+        
+        bloque_actual = np.append(bloque_actual[1:], pred_esc).reshape(-1,1)
+
+    pred_high = scaler.inverse_transform(np.array(pred_high_scaled).reshape(-1,1)).ravel()
+
+    #
+    tail = df.iloc[-k_rel:] if len(df) >= k_rel else df
+    
+    eps = 1e-9
+    r_close = np.median((tail['Close'] / (tail['High'] + eps)).clip(0.7, 1.0))  
+    r_low   = np.median((tail['Low']   / (tail['High'] + eps)).clip(0.5, 0.99)) 
+ 
+   
+    vol_base = float(np.median(tail['Volume'])) if tail['Volume'].notna().any() else 0.0
+
+    
+    futuros_idx = pd.date_range(start=df.index[-1] + pd.tseries.frequencies.to_offset(freq),
+                                periods=dias_futuros, freq=freq)
+
+    ohlcv_rows = []
+    prev_close = float(df['Close'].iloc[-1])
+
+    for i in range(dias_futuros):
+        high_i = float(pred_high[i])
+
+       
+        close_i = float(max(eps, r_close * high_i))
+
+        
+        open_i = float(prev_close) if i > 0 else float(df['Close'].iloc[-1])
+
+       
+        low_guess = float(max(eps, r_low * high_i))
+        low_i = min(low_guess, open_i, close_i, high_i)
+
+        
+        high_i = max(high_i, open_i, close_i, low_i)  
+        low_i  = min(low_i, open_i, close_i, high_i)
+
+        
+        vol_i = vol_base
+
+        ohlcv_rows.append([open_i, high_i, low_i, close_i, vol_i])
+        prev_close = close_i
+
+    df_futuro = pd.DataFrame(ohlcv_rows, index=futuros_idx, columns=['Open','High','Low','Close','Volume'])
+
+    
+    df_futuro['High'] = df_futuro[['Open','Close','High']].max(axis=1)
+    df_futuro['Low']  = df_futuro[['Open','Close','Low']].min(axis=1)
+
+    
+    for c in ['Open','High','Low','Close']:
+        df_futuro[c] = df_futuro[c].astype(float)
+
+    return df_futuro
+
+
+modelo = red_LSTM()  
+
+
+df_30d = predecir_ohlcv_30d(modelo, df, scaler=None, time_step=60, dias_futuros=30)
+
 
 

@@ -23,59 +23,11 @@ import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-archivo = "C:/Users/jeron/OneDrive/Escritorio/CoinPredictor/Datos/bitcoin_semanal.csv"
-
-
-def cargar_depurar_datos(archivo):
-    """
-    Carga y depura un archivo CSV de precios de Bitcoin mensual,
-    devolviendo tanto el DataFrame limpio como una estructura
-    tipo lista de diccionarios de diccionarios.
-    """
-    
-    df = pd.read_csv(archivo, skiprows=2)
-
-    
-    df = df.rename(columns={
-        "Date": "Date",
-        "Unnamed: 1": "Close",
-        "Unnamed: 2": "High",
-        "Unnamed: 3": "Low",
-        "Unnamed: 4": "Open",
-        "Unnamed: 5": "Volume"
-    })
-
-    
-    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-
-    
-    for col in ["Close", "High", "Low", "Open", "Volume"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-
-   
-    df.dropna(inplace=True)
-
-   
-    df.set_index("Date", inplace=True)
-
-    
-    estructura = []
-    for date, row in df.iterrows():
-        estructura.append({
-            str(date.date()): {
-                "Close": row["Close"],
-                "High": row["High"],
-                "Low": row["Low"],
-                "Open": row["Open"],
-                "Volume": row["Volume"]
-            }
-        })
-
-    return df, estructura
+from Datos.datos import cargar_depurar_datos, archivo_semanal
 
 
 #Dataframe depurado y una etsructura de datos tipo lista de diccionarios de diccionarios
-df, estrcutura = cargar_depurar_datos(archivo)
+df = cargar_depurar_datos(archivo_semanal)
 
 #Subsets de los ciclos del mercado teniendo en cuenta los halvings
 c1=df.loc["2012-11-28":"2016-07-09"]
