@@ -7,13 +7,6 @@ from pathlib import Path
 import requests
 
 
-#Imports foraneos
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-
-
-
 pipe = pipeline("text-classification", model="ProsusAI/finbert")
 
 
