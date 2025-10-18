@@ -1,3 +1,3 @@
 # CoinPredictor
 
-16 octubre v1 (sin resultados especificos)
+17 octubre ---- Version 1 COINPREDICTOR (BACK)
