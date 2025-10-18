@@ -1,3 +1,4 @@
+import keras
 import numpy as np
 np.random.seed(4)
 import matplotlib.pyplot as plt
@@ -267,9 +268,12 @@ def predecir_ohlcv_30d(modelo, df, scaler=None, time_step=60, dias_futuros=30, k
     return df_futuro
 
 
-modelo = red_LSTM()  
+modelo = red_LSTM()
+fecha_hoy = pd.Timestamp.now().strftime("%Y%m%d")
+modelo.save(f'Modelo_LSTM{fecha_hoy}.h5')
 
-
+#Cargar modelo
+# model_b = keras.models.load_model(f'Modelo_LSTM{fecha_hoy}.h5')
 df_30d = predecir_ohlcv_30d(modelo, df, scaler=None, time_step=60, dias_futuros=30)
 
 
