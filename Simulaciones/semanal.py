@@ -55,7 +55,7 @@ def cargar_depurar_datos(archivo):
 
 #Dataframe depurado y una etsructura de datos tipo lista de diccionarios de diccionarios
 
-df = cargar_depurar_datos(archivo_semanal = "C:/Users/jeron/OneDrive/Escritorio/CoinPredictor/Datos/bitcoin_semanal.csv")
+df = cargar_depurar_datos(r"C:\Users\jeron\OneDrive\Escritorio\CoinPredictor\Datos\bitcoin_semanal.csv")
 
 #Subsets de los ciclos del mercado teniendo en cuenta los halvings
 c1=df.loc["2012-11-28":"2016-07-09"]
@@ -692,11 +692,11 @@ def calcular_estadisticas_duracion_fases(c):
     for fase in fases:
         if fase == 'Indefinido':
             continue
-        
+
         duraciones = []
         contador = 0
-        
-        for i in range(len(df)):
+
+        for i in range(len(d)):
             if d['Fase'].iloc[i] == fase:
                 contador += 1
             else:
@@ -956,13 +956,13 @@ def multiples_simulaciones(c):
 
 
 
-# c4_s, c4_s_s = simulacion_montecarlo(df)
+c4_s, c4_s_s = simulacion_montecarlo(df)
 
-# print(estadisticas_dataframe(c4_s_s))
+print(estadisticas_dataframe(c4_s_s))
 
-# grafica_simple(c4_s_s)
+grafica_simple(c4_s_s)
 
-# print(c4_s_s.info())
+print(c4_s_s.info())
 
 # c4_s, c4_s_s = simulacion_series_de_tiempo(df)
 # grafica_simple(c4_s)
@@ -1019,7 +1019,7 @@ def multiples_simulaciones(c):
 
 
 
-    
+   
 
 
 

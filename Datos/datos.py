@@ -18,6 +18,6 @@ def descargar_datos():
     btc_weekly.to_csv("bitcoin_semanal.csv")
 
 
-
+descargar_datos()
 
 
