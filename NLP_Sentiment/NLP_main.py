@@ -1,9 +1,6 @@
 import feedparser
-
 from transformers import pipeline
-
 from pathlib import Path
-
 import requests
 
 
@@ -52,14 +49,6 @@ def yahoo_finance():
     s = f'Sentimiento general: {"Positivo" if final_score >= 0.15 else "Negativo" if final_score <= -0.15 else "Neutral"} {final_score}'
 
     return s
-
-API_KEY = Path(__file__).parent.joinpath("API_KEY").read_text().strip()
-
-from transformers import pipeline
-from pathlib import Path
-import requests
-
-pipe = pipeline("text-classification", model="ProsusAI/finbert")
 
 API_KEY = Path(__file__).parent.joinpath("API_KEY").read_text().strip()
 
