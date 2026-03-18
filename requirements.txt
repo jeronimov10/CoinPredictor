@@ -27,7 +27,7 @@ google-auth==2.41.1
 google-auth-oauthlib==1.2.3
 google-pasta==0.2.0
 grpcio==1.76.0
-h5py==3.7.0
+h5py==3.10.0
 huggingface-hub==0.36.0
 idna==3.11
 ipykernel==7.1.0
@@ -37,8 +37,6 @@ Jinja2==3.1.6
 joblib==1.5.2
 jupyter_client==8.8.0
 jupyter_core==5.9.1
-keras==2.15.0
-Keras-Preprocessing==1.1.2
 kiwisolver==1.4.9
 libclang==18.1.1
 lxml==6.0.2
@@ -57,9 +55,8 @@ numpy==1.26.4
 oauthlib==3.3.1
 opt_einsum==3.4.0
 packaging==25.0
-pandas==2.3.3
+pandas==2.2.3
 pandas-datareader==0.10.0
-pandas-ta-classic==0.3.59
 parso==0.8.5
 patsy==1.0.2
 peewee==3.18.2
@@ -97,8 +94,6 @@ tensorboard==2.15.2
 tensorboard-data-server==0.7.2
 tensorboard-plugin-wit==1.8.1
 tensorflow==2.15.0
-tensorflow-estimator==2.15.0
-tensorflow-intel==2.15.0
 tensorflow-io-gcs-filesystem==0.31.0
 termcolor==3.1.0
 threadpoolctl==3.6.0
