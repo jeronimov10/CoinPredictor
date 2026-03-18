@@ -55,10 +55,17 @@ def yahoo_finance():
 
 API_KEY = Path(__file__).parent.joinpath("API_KEY").read_text().strip()
 
-def news_api():
+from transformers import pipeline
+from pathlib import Path
+import requests
 
-    keyword = 'BTC'
-    date = '2026-01-30'
+pipe = pipeline("text-classification", model="ProsusAI/finbert")
+
+API_KEY = Path(__file__).parent.joinpath("API_KEY").read_text().strip()
+
+def news_api():
+    keyword = 'Trump'
+    date = '2026-03-16'
 
     url = (
         'https://newsapi.org/v2/everything?'
@@ -69,29 +76,30 @@ def news_api():
     )
 
     response = requests.get(url)
-
     articles = response.json()['articles']
 
-    article = [article for article in articles if keyword.lower() in article['title'].lower() or keyword.lower() in article['description'].lower() ]
-
-    
+    filtered = [
+        a for a in articles
+        if keyword.lower() in (a.get('title') or '').lower()
+        or keyword.lower() in (a.get('description') or '').lower()
+    ]
 
     total_score = 0
-
     num_articles = 0
 
-    for i, article in enumerate(articles):
+    for i, article in enumerate(filtered):
+        print(f'Title: {article["title"]}')
+        print(f'Link: {article["url"]}')
+        print(f'Published: {article["description"]}')
 
+        content = article.get('content') or article.get('description') or ''
+        if not content:
+            continue
 
-        # print(f'Title: {article["title"]}')
-        # print(f'Link: {article["url"]}')
-        # print(f'Published: {article["description"]}')
+        sentimiento = pipe(content)[0]
 
-
-        sentimiento = pipe(article['content'])[0]
-
-        # print(f'Sentimiento {sentimiento["label"]}, score: {sentimiento["score"]}')
-        # print('-' * 40)
+        print(f'Sentimiento {sentimiento["label"]}, score: {sentimiento["score"]}')
+        print('-' * 40)
 
         if sentimiento['label'] == 'positive':
             total_score += sentimiento['score']
@@ -100,17 +108,11 @@ def news_api():
             total_score -= sentimiento['score']
             num_articles += 1
 
-
-
     if num_articles == 0:
-        print('No hay articulos disponibles')
+        return 'No hay artículos disponibles'
 
-    else:
+    final_score = total_score / num_articles
+    return f'Sentimiento general: {"Positivo" if final_score >= 0.15 else "Negativo" if final_score <= -0.15 else "Neutral"} {final_score}'
 
-        final_score = total_score / num_articles
-
-        
-        s = f'Sentimiento general: {"Positivo" if final_score >= 0.15 else "Negativo" if final_score <= -0.15 else "Neutral"} {final_score}'
-    return s
 print(news_api())
 print(yahoo_finance())
